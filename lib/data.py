@@ -1,6 +1,10 @@
 import enum
 import numpy as np
 import os.path
+import nltk
+from nltk import WordPunctTokenizer
+nltk.download('punkt')
+from nltk.tokenize import word_tokenize
 
 class DatasetType(enum.Enum):
     TRAIN = 0
@@ -22,7 +26,7 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN):
     if target_language == Language.ENGLISH:
         raise ValueError("Target language cannot be english")
     
-    base_path = '../datasets/'
+    base_path = 'datasets/'
     if target_language == Language.GERMAN:
         language_folder = "en-de"
         language = "ende"
@@ -46,3 +50,32 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN):
     scores = np.loadtxt(score_file)
     
     return src, translated, scores
+
+def tokenize(text_array):
+    """
+    >>> sentences, voc = tokenize(np.array(["Hello how are you?", "Thank you I'm fine", "yeah me too."]))
+    >>> sentences 
+    [['hello', 'how', 'are', 'you', '?'], ['thank', 'you', 'i', "'m", 'fine'], ['yeah', 'me', 'too', '.']]
+    """
+
+    tokeniser = WordPunctTokenizer()
+
+    sentences = []
+    vocabulary = set()
+    for sentence in text_array:
+        tokens = tokeniser.tokenize(sentence)
+        lower_cased_tokens = []
+        for tok in tokens:
+            tok_lower = tok.lower()
+            lower_cased_tokens.append(tok_lower)
+            vocabulary.add(tok_lower)
+        sentences.append(lower_cased_tokens)
+
+    return sentences, vocabulary
+
+"""
+TODO: remove, should be able to run it from pytest
+"""
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
