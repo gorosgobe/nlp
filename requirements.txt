@@ -1,4 +1,5 @@
+nltk
 numpy
 scipy
-tensorflow
 sklearn
+tensorflow
