@@ -19,6 +19,18 @@ def load_word2vec_embedding(path):
     return model
 
 
+def reduce_word2vec_vocab(input_path, output_path, vocab):
+    # TODO: docstring
+    input_model = KeyedVectors.load_word2vec_format(input_path, binary=True)
+    # TODO: remove hardcoded value
+    output_model = KeyedVectors(100)
+    for word in vocab:
+        if word in input_model.vocab:
+            output_model.add([word], [input_model[word]])
+
+    output_model.save_word2vec_format(output_path, binary=True)
+
+
 def get_embeddings(model, tokenized_sentences, path, embedding_type):
     """
     Param: tokenized_sentences: list of lists of words
@@ -29,6 +41,7 @@ def get_embeddings(model, tokenized_sentences, path, embedding_type):
     for sentence in tokenized_sentences:
         embedded_sentence = []
         for word in sentence:
+            # TODO: wv is deprecated, remove to do model.vocab directly
             if word in model.wv.vocab:
                 embedded_word = model[word]
                 embedded_sentence.append(embedded_word)
