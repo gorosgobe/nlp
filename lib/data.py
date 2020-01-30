@@ -5,7 +5,6 @@ import os.path
 class DatasetType(enum.Enum):
     TRAIN = 0
     VAL = 1
-    TEST = 2
 
 class Language(enum.Enum):
     GERMAN = 0
@@ -37,8 +36,6 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN):
         prefix = "train"
     elif data_type == DatasetType.VAL:
         prefix = "dev"
-    else:
-        prefix = "test"
     
     src_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.src'))
     translation_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.mt'))
