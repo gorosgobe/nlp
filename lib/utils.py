@@ -3,3 +3,28 @@ import os
 __current_file_path = os.path.dirname(os.path.realpath(__file__))
 DATASETS_BASE_PATH = os.path.abspath(os.path.join(__current_file_path, '..', 'datasets/'))
 MODELS_SAVE_PATH = os.path.abspath(os.path.join(__current_file_path, '..', 'saved_models/'))
+
+CONSTANT_MAX_LENGTH_ENGLISH_TRAIN = 39
+CONSTANT_MAX_LENGTH_GERMAN_TRAIN  = 39
+
+CONSTANT_MAX_LENGTH_ENGLISH_VAL   = 37
+CONSTANT_MAX_LENGTH_GERMAN_VAL    = 36
+
+CONSTANT_MAX_LENGTH_ENGLISH_TEST   = 34
+CONSTANT_MAX_LENGTH_GERMAN_TEST    = 54
+
+# Maximum sequence length for english data
+CONSTANT_MAX_LENGTH_ENGLISH = max(
+    CONSTANT_MAX_LENGTH_ENGLISH_TRAIN, 
+    CONSTANT_MAX_LENGTH_ENGLISH_VAL, 
+    CONSTANT_MAX_LENGTH_ENGLISH_TEST
+)
+
+# Maximum sequence length for german data
+CONSTANT_MAX_LENGTH_GERMAN = max(
+    CONSTANT_MAX_LENGTH_GERMAN_TRAIN,
+    CONSTANT_MAX_LENGTH_GERMAN_VAL,
+    CONSTANT_MAX_LENGTH_GERMAN_TEST
+)
+
+BASE_PADDING = [0.0 for _ in range(100)]

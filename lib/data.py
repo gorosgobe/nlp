@@ -48,15 +48,13 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN):
     src_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.src'))
     translation_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.mt'))
 
+    scores = None
     if data_type != DatasetType.TEST:
         score_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.scores'))
         scores = np.loadtxt(score_file)
-    else:
-        scores = None
     
     src = load_text(src_file)
     translated = load_text(translation_file)
-
     
     return src, translated, scores
 
@@ -81,6 +79,17 @@ def tokenize(text_array):
         sentences.append(lower_cased_tokens)
 
     return sentences, vocabulary
+
+def pad_to_length(word_embeddings, length, padding):
+    """
+    word_embeddings: of size for example (num_sentences, variable_num_words_per_sentence, dimensionality)
+    Returns: word_embeddings but with size (num_sentences, max_num_words_per_sentence, dimensionality), padded with zeros of dimension (dimensionality,)
+    """
+    for sentence in word_embeddings:
+        num_to_append = length - len(sentence)
+        assert num_to_append >= 0
+        for _ in range(num_to_append):
+            sentence.append(padding)
 
 """
 TODO: remove, should be able to run it from pytest

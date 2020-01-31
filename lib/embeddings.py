@@ -31,13 +31,14 @@ def reduce_word2vec_vocab(input_path, output_path, vocab):
     output_model.save_word2vec_format(output_path, binary=True)
 
 
-def get_embeddings(model, tokenized_sentences, embedding_type):
+def get_embeddings(model, tokenized_sentences, embedding_type, print_max_length=False):
     """
     Param: tokenized_sentences: list of lists of words
     Returns: List of lists of embeddings, and list of ignored words
     """
     res = []
     ignored = []
+    max_len_sentence = 0
     for sentence in tokenized_sentences:
         embedded_sentence = []
         for word in sentence:
@@ -46,7 +47,11 @@ def get_embeddings(model, tokenized_sentences, embedding_type):
                 embedded_sentence.append(embedded_word)
             else:
                 ignored.append(word)
+        max_len_sentence = max(max_len_sentence, len(embedded_sentence))
         res.append(embedded_sentence)
+
+    if print_max_length:
+        print(f"Max length for sentence: {max_len_sentence}")
 
     return res, ignored
 
