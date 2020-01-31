@@ -31,7 +31,7 @@ def reduce_word2vec_vocab(input_path, output_path, vocab):
     output_model.save_word2vec_format(output_path, binary=True)
 
 
-def get_embeddings(model, tokenized_sentences, path, embedding_type):
+def get_embeddings(model, tokenized_sentences, embedding_type):
     """
     Param: tokenized_sentences: list of lists of words
     Returns: List of lists of embeddings, and list of ignored words

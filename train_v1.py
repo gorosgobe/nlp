@@ -29,7 +29,6 @@ if __name__ == "__main__":
     english_vectors,  _ignored_english_words = lib.embeddings.get_embeddings(
         english_embedding_model,
         sources_tok, 
-        ENGLISH_EMBEDDING_MODEL, 
         lib.embeddings.EmbeddingType.WORD2VEC
     )
 
@@ -37,7 +36,6 @@ if __name__ == "__main__":
     german_vectors,  _ignored_german_words = lib.embeddings.get_embeddings(
         german_embedding_model,
         translation_tok, 
-        GERMAN_EMBEDDING_MODEL, 
         lib.embeddings.EmbeddingType.WORD2VEC
     )
 
@@ -55,7 +53,6 @@ if __name__ == "__main__":
     val_english_vectors,  ignored_val_english_words = lib.embeddings.get_embeddings(
         english_embedding_model,
         val_sources_tok, 
-        ENGLISH_EMBEDDING_MODEL, 
         lib.embeddings.EmbeddingType.WORD2VEC
     )
 
@@ -63,7 +60,6 @@ if __name__ == "__main__":
     val_german_vectors,  ignored_val_german_words = lib.embeddings.get_embeddings(
         german_embedding_model,
         val_translation_tok, 
-        GERMAN_EMBEDDING_MODEL, 
         lib.embeddings.EmbeddingType.WORD2VEC
     )
     print(f"Ignored words, english {len(ignored_val_english_words)}, german {len(ignored_val_english_words)}")
@@ -80,4 +76,4 @@ if __name__ == "__main__":
     val_embeddings = np.concatenate((val_english_average_sentence_embeddings, val_german_average_sentence_embeddings), axis=1)
 
     print("Training model")
-    model = lib.mlp.fit_model(embeddings, train_scores, batch_size=64, epochs=500, x_val=val_embeddings, y_val=val_scores, name='mlp_model_best')
+    model = lib.mlp.fit_model(embeddings, train_scores, batch_size=128, epochs=500, x_val=val_embeddings, y_val=val_scores, name='mlp_model_best')

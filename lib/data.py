@@ -5,7 +5,7 @@ import nltk
 from nltk import WordPunctTokenizer
 nltk.download('punkt')
 from nltk.tokenize import word_tokenize
-from utils import DATASETS_BASE_PATH
+from lib.utils import DATASETS_BASE_PATH
 
 class DatasetType(enum.Enum):
     TRAIN = 0
