@@ -11,8 +11,8 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     """
 
     # define two sets of inputs
-    english_input = Input(shape=(7000, max_english_len_sentence, english_dimensionality))
-    german_input = Input(shape=(7000, max_german_len_sentence, german_dimensionality))
+    english_input = Input(shape=(max_english_len_sentence, english_dimensionality))
+    german_input = Input(shape=(max_german_len_sentence, german_dimensionality))
     
     # english branch
     x = LSTM(64)(english_input)
@@ -34,6 +34,11 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     # our model will accept the inputs of the two branches and
     # then output a single value
     model = Model(inputs=[x.input, y.input], outputs=z)
+    model.compile(
+        loss='mean_squared_error',
+        optimizer='adam',
+        metrics=['mean_squared_error', "mae"]
+    )
     return model
     
 def fit_model(english_x, german_x, y, batch_size, epochs, english_x_val, german_x_val, y_val, name, seed=2019):
