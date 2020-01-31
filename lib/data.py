@@ -5,6 +5,7 @@ import nltk
 from nltk import WordPunctTokenizer
 nltk.download('punkt')
 from nltk.tokenize import word_tokenize
+from utils import DATASETS_BASE_PATH
 
 class DatasetType(enum.Enum):
     TRAIN = 0
@@ -27,7 +28,7 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN):
     if target_language == Language.ENGLISH:
         raise ValueError("Target language cannot be english")
     
-    base_path = 'datasets/'
+    base_path = DATASETS_BASE_PATH
     if target_language == Language.GERMAN:
         language_folder = "en-de"
         language = "ende"

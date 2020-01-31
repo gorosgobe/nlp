@@ -2,6 +2,7 @@ import tensorflow.keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+from utils import MODELS_SAVE_PATH
 
 def build_compile_model():
     """
@@ -18,7 +19,7 @@ def build_compile_model():
     )
     return model
     
-def fit_model(x, y, batch_size, epochs, x_val, y_val):
+def fit_model(x, y, batch_size, epochs, x_val, y_val, name):
     """
     Builds, compiles and trains model on given dataset
     x: size (7000, 200)
@@ -27,7 +28,7 @@ def fit_model(x, y, batch_size, epochs, x_val, y_val):
     model = build_compile_model()
     callbacks = [
         EarlyStopping(monitor='val_loss', patience=25, verbose=1, restore_best_weights=True), 
-        ModelCheckpoint("saved_models/mlp_model_best.hdf5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True)
+        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True)
     ]
     validation_data = None
     if x_val is not None and y_val is not None:

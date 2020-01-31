@@ -80,4 +80,4 @@ if __name__ == "__main__":
     val_embeddings = np.concatenate((val_english_average_sentence_embeddings, val_german_average_sentence_embeddings), axis=1)
 
     print("Training model")
-    model = lib.mlp.fit_model(embeddings, train_scores, batch_size=64, epochs=500, x_val=val_embeddings, y_val=val_scores)
+    model = lib.mlp.fit_model(embeddings, train_scores, batch_size=64, epochs=500, x_val=val_embeddings, y_val=val_scores, name='mlp_model_best')
