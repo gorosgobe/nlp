@@ -41,8 +41,7 @@ def get_embeddings(model, tokenized_sentences, path, embedding_type):
     for sentence in tokenized_sentences:
         embedded_sentence = []
         for word in sentence:
-            # TODO: wv is deprecated, remove to do model.vocab directly
-            if word in model.wv.vocab:
+            if word in model.vocab:
                 embedded_word = model[word]
                 embedded_sentence.append(embedded_word)
             else:

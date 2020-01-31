@@ -9,6 +9,7 @@ from nltk.tokenize import word_tokenize
 class DatasetType(enum.Enum):
     TRAIN = 0
     VAL = 1
+    TEST = 2
 
 class Language(enum.Enum):
     GERMAN = 0
@@ -40,14 +41,21 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN):
         prefix = "train"
     elif data_type == DatasetType.VAL:
         prefix = "dev"
+    elif data_type == DatasetType.TEST:
+        prefix = "test"
     
     src_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.src'))
     translation_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.mt'))
-    score_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.scores'))
+
+    if data_type != DatasetType.TEST:
+        score_file = os.path.abspath(os.path.join(path, f'{prefix}.{language}.scores'))
+        scores = np.loadtxt(score_file)
+    else:
+        scores = None
     
     src = load_text(src_file)
     translated = load_text(translation_file)
-    scores = np.loadtxt(score_file)
+
     
     return src, translated, scores
 

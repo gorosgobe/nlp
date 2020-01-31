@@ -13,8 +13,8 @@ if __name__ == "__main__":
     translation_tok, translation_vocab = lib.data.tokenize(train_translation)
     # import pdb
     # pdb.set_trace()
-    ENGLISH_EMBEDDING_MODEL = "/vol/bitbucket/eb1816/nlp_cw/embeddings/english/model.bin"
-    GERMAN_EMBEDDING_MODEL = "/vol/bitbucket/eb1816/nlp_cw/embeddings/german/model.bin"
+    ENGLISH_EMBEDDING_MODEL = "embeddings/en_model_downsampled.bin"
+    GERMAN_EMBEDDING_MODEL = "embeddings/de_model_downsampled.bin"
 
     print("Loading english embedding model...")
     english_embedding_model = lib.embeddings.load_embedding(ENGLISH_EMBEDDING_MODEL, lib.embeddings.EmbeddingType.WORD2VEC)
@@ -80,4 +80,4 @@ if __name__ == "__main__":
     val_embeddings = np.concatenate((val_english_average_sentence_embeddings, val_german_average_sentence_embeddings), axis=1)
 
     print("Training model")
-    model = lib.mlp.fit_model(embeddings, train_scores, batch_size=64, epochs=20, x_val=val_embeddings, y_val=val_scores)
+    model = lib.mlp.fit_model(embeddings, train_scores, batch_size=64, epochs=500, x_val=val_embeddings, y_val=val_scores)
