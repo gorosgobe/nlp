@@ -1,4 +1,16 @@
 import os
+import tensorflow as tf
+from tensorflow.keras import backend as K
+
+def pearsonr(x, y):
+    mx = K.mean(x)
+    my = K.mean(y)
+    xm, ym = x-mx, y-my
+    r_num = K.sum(tf.multiply(xm,ym))
+    r_den = K.sqrt(tf.multiply(K.sum(K.square(xm)), K.sum(K.square(ym))))
+    return r_num / r_den
+
+    # return K.maximum(K.minimum(r, 1.0), -1.0)
 
 __current_file_path = os.path.dirname(os.path.realpath(__file__))
 DATASETS_BASE_PATH = os.path.abspath(os.path.join(__current_file_path, '..', 'datasets/'))
@@ -28,3 +40,5 @@ CONSTANT_MAX_LENGTH_GERMAN = max(
 )
 
 BASE_PADDING = [0.0 for _ in range(100)]
+
+EVALUATION_METRICS = ['mean_squared_error', "mae", tf.keras.metrics.RootMeanSquaredError(), pearsonr]

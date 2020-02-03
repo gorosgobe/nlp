@@ -2,8 +2,9 @@ import tensorflow.keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, BatchNormalization, Activation
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from lib.utils import MODELS_SAVE_PATH
+from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS
 import numpy as np
+
 
 def build_compile_model():
     """
@@ -17,7 +18,7 @@ def build_compile_model():
     model.compile(
         loss='mean_squared_error',
         optimizer='adam',
-        metrics=['mean_squared_error', "mae"]
+        metrics=EVALUATION_METRICS
     )
     return model
     

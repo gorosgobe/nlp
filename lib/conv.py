@@ -1,6 +1,7 @@
 import tensorflow.keras
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv1D, GlobalMaxPooling1D, concatenate, Dense
+from lib.utils import EVALUATION_METRICS
 
 def _get_single_conv(max_len,
                      dim):
@@ -52,7 +53,7 @@ def build_word_level_conv_net(max_english_len,
     model.compile(
         loss="mse",
         optimizer="adam",
-        metrics=["mse", "mae"],
+        metrics=EVALUATION_METRICS,
     )
     model.summary()
     return model

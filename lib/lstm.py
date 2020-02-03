@@ -2,7 +2,7 @@ import tensorflow.keras
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, BatchNormalization, Activation, concatenate, Input, LSTM
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from lib.utils import MODELS_SAVE_PATH
+from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS
 import numpy as np
 
 def build_compile_model(max_english_len_sentence, max_german_len_sentence, english_dimensionality, german_dimensionality):
@@ -38,7 +38,7 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     model.compile(
         loss='mean_squared_error',
         optimizer=tensorflow.keras.optimizers.Adam(learning_rate=0.00001, amsgrad=False),
-        metrics=['mean_squared_error', "mae"]
+        metrics=EVALUATION_METRICS
     )
     return model
     
