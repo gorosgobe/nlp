@@ -15,11 +15,11 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     german_input = Input(shape=(None, german_dimensionality), name='german_input')
     
     # english branch
-    x = LSTM(64)(english_input)
+    x = LSTM(100)(english_input)
     x = Model(inputs=english_input, outputs=x)
     
     # german branch
-    y = LSTM(64)(german_input)
+    y = LSTM(100)(german_input)
     y = Model(inputs=german_input, outputs=y)
     
     # combine the output of the two branches
@@ -27,8 +27,9 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     
     # apply a FC layer and then a regression prediction on the
     # combined outputs
-    z = Dense(200, activation="relu")(combined)
-    z = Dense(100, activation="relu")(z)
+    z = Dense(1000, activation="relu")(combined)
+    z = Dense(300, activation="relu")(z)
+    z = Dense(50, activation="relu")(z)
     z = Dense(1, activation="linear", name='output')(z)
     
     # our model will accept the inputs of the two branches and
@@ -36,7 +37,7 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     model = Model(inputs=[x.input, y.input], outputs=z)
     model.compile(
         loss='mean_squared_error',
-        optimizer='adam',
+        optimizer=tensorflow.keras.optimizers.Adam(learning_rate=0.00001, amsgrad=False),
         metrics=['mean_squared_error', "mae"]
     )
     return model
@@ -58,15 +59,16 @@ def fit_model(english_x, german_x, y, batch_size, epochs, english_x_val, german_
     # TODO: remove 100 hardcoded
     model = build_compile_model(max_len_sentence_english, max_len_sentence_german, 100, 100)
     callbacks = [
-        EarlyStopping(monitor='val_loss', patience=25, verbose=1, restore_best_weights=True), 
+        EarlyStopping(monitor='val_loss', patience=40, verbose=1, restore_best_weights=True), 
         ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True)
     ]
     validation_data = None
     if english_x_val is not None and german_x_val is not None and y_val is not None:
-        validation_data = {'english_input': english_x_val, 'german_input': german_x_val}, {'output': y_val}
+        # validation_data = {'english_input': english_x_val, 'german_input': german_x_val}, {'output': y_val}
+        validation_data = [[english_x_val, german_x_val], y_val]
 
-    # model.fit([english_x, german_x], y, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=validation_data, callbacks=callbacks)
-    model.fit_generator(our_generator(english_x, german_x, y), steps_per_epoch=1, epochs=epochs, verbose=1, callbacks=callbacks, validation_data=validation_data)
+    model.fit([english_x, german_x], y, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=validation_data, callbacks=callbacks)
+    # model.fit_generator(our_generator(english_x, german_x, y), steps_per_epoch=1, epochs=epochs, verbose=1, callbacks=callbacks, validation_data=validation_data)
     return model
 
 def eval_model(x_test_english, x_test_german, y_test, model):
