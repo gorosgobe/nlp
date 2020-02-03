@@ -11,8 +11,8 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     """
 
     # define two sets of inputs
-    english_input = Input(shape=(None, english_dimensionality))
-    german_input = Input(shape=(None, german_dimensionality))
+    english_input = Input(shape=(None, english_dimensionality), name='english_input')
+    german_input = Input(shape=(None, german_dimensionality), name='german_input')
     
     # english branch
     x = LSTM(64)(english_input)
@@ -29,7 +29,7 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     # combined outputs
     z = Dense(200, activation="relu")(combined)
     z = Dense(100, activation="relu")(z)
-    z = Dense(1, activation="linear")(z)
+    z = Dense(1, activation="linear", name='output')(z)
     
     # our model will accept the inputs of the two branches and
     # then output a single value
@@ -63,10 +63,10 @@ def fit_model(english_x, german_x, y, batch_size, epochs, english_x_val, german_
     ]
     validation_data = None
     if english_x_val is not None and german_x_val is not None and y_val is not None:
-        validation_data = [[english_x_val, german_x_val], y_val]
+        validation_data = {'english_input': english_x_val, 'german_input': german_x_val}, {'output': y_val}
 
     # model.fit([english_x, german_x], y, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=validation_data, callbacks=callbacks)
-    model.fit_generator(our_generator(english_x, german_x, y), steps_per_epoch=1, epochs=epochs, verbose=1, callbacks=callbacks)
+    model.fit_generator(our_generator(english_x, german_x, y), steps_per_epoch=1, epochs=epochs, verbose=1, callbacks=callbacks, validation_data=validation_data)
     return model
 
 def eval_model(x_test_english, x_test_german, y_test, model):
@@ -76,6 +76,6 @@ def eval_model(x_test_english, x_test_german, y_test, model):
 
 def our_generator(in1, in2, labels):
     while True:
-        yield ([in1, in2], labels)
+        yield {'english_input': in1, 'german_input': in2}, {'output': labels}
         # yield([in1, in2], labels)
         # yield(in1, in2, labels)
