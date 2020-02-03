@@ -11,8 +11,8 @@ def build_compile_model(max_english_len_sentence, max_german_len_sentence, engli
     """
 
     # define two sets of inputs
-    english_input = Input(shape=(max_english_len_sentence, english_dimensionality))
-    german_input = Input(shape=(max_german_len_sentence, german_dimensionality))
+    english_input = Input(shape=(None, english_dimensionality))
+    german_input = Input(shape=(None, german_dimensionality))
     
     # english branch
     x = LSTM(64)(english_input)
@@ -65,10 +65,17 @@ def fit_model(english_x, german_x, y, batch_size, epochs, english_x_val, german_
     if english_x_val is not None and german_x_val is not None and y_val is not None:
         validation_data = [[english_x_val, german_x_val], y_val]
 
-    model.fit([english_x, german_x], y, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=validation_data, callbacks=callbacks)
+    # model.fit([english_x, german_x], y, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=validation_data, callbacks=callbacks)
+    model.fit_generator(our_generator(english_x, german_x, y), steps_per_epoch=1, epochs=epochs, verbose=1, callbacks=callbacks)
     return model
 
 def eval_model(x_test_english, x_test_german, y_test, model):
     score = model.evaluate([x_test_english, x_test_german], y_test)
     print(score)
     return score
+
+def our_generator(in1, in2, labels):
+    while True:
+        yield ([in1, in2], labels)
+        # yield([in1, in2], labels)
+        # yield(in1, in2, labels)
