@@ -38,11 +38,13 @@ if __name__ == "__main__":
         lib.embeddings.EmbeddingType.WORD2VEC
     )
 
-    lib.data.pad_to_length(english_vectors, lib.utils.CONSTANT_MAX_LENGTH_ENGLISH, lib.utils.BASE_PADDING)
-    lib.data.pad_to_length(german_vectors, lib.utils.CONSTANT_MAX_LENGTH_GERMAN, lib.utils.BASE_PADDING)
 
-    english_train_embeddings = np.array(english_vectors)
-    german_train_embeddings  = np.array(german_vectors)
+    ## TODO: Move logic into generator!!
+    # lib.data.pad_to_length(english_vectors, lib.utils.CONSTANT_MAX_LENGTH_ENGLISH, lib.utils.BASE_PADDING)
+    # lib.data.pad_to_length(german_vectors, lib.utils.CONSTANT_MAX_LENGTH_GERMAN, lib.utils.BASE_PADDING)
+
+    # english_train_embeddings = np.array(english_vectors)
+    # german_train_embeddings  = np.array(german_vectors)
 
     # validation vectors
     print("Validation data processing...")
@@ -65,22 +67,24 @@ if __name__ == "__main__":
     )
     print(f"Ignored words, english {len(ignored_val_english_words)}, german {len(ignored_val_english_words)}")
 
-    lib.data.pad_to_length(val_english_vectors, lib.utils.CONSTANT_MAX_LENGTH_ENGLISH, lib.utils.BASE_PADDING)
-    lib.data.pad_to_length(val_german_vectors, lib.utils.CONSTANT_MAX_LENGTH_GERMAN, lib.utils.BASE_PADDING)
 
-    english_val_embeddings = np.array(val_english_vectors)
-    german_val_embeddings  = np.array(val_german_vectors)
+    # TODO: Move this logic into generator
+    # lib.data.pad_to_length(val_english_vectors, lib.utils.CONSTANT_MAX_LENGTH_ENGLISH, lib.utils.BASE_PADDING)
+    # lib.data.pad_to_length(val_german_vectors, lib.utils.CONSTANT_MAX_LENGTH_GERMAN, lib.utils.BASE_PADDING)
+
+    # english_val_embeddings = np.array(val_english_vectors)
+    # german_val_embeddings  = np.array(val_german_vectors)
     
 
     print("Training model")
     model = lib.lstm.fit_model(
-        english_x=english_train_embeddings,
-        german_x=german_train_embeddings,
+        english_x=english_vectors,
+        german_x=german_vectors,
         y=train_scores, 
         batch_size=128, 
         epochs=500, 
-        english_x_val=english_val_embeddings, 
-        german_x_val=german_val_embeddings,
+        english_x_val=val_english_vectors, 
+        german_x_val=val_german_vectors,
         y_val=val_scores, 
         name='lstm_model_best'
     )
