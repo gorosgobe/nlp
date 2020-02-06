@@ -44,5 +44,7 @@ BASE_PADDING = [0.0 for _ in range(100)]
 
 EVALUATION_METRICS = ['mean_squared_error', "mae", tf.keras.metrics.RootMeanSquaredError(), pearsonr]
 
+MODEL_PATIENCE = 25
+
 def get_config(params):
     return {p: params[p][random.randint(0, len(params[p]) - 1)] for p in params}

@@ -3,7 +3,8 @@ import lib.embeddings
 import numpy as np
 import lib.lstm
 import random
-from lib.utils import get_config
+import json
+from lib.utils import get_config, MODEL_PATIENCE
 
 if __name__ == "__main__":
 
@@ -99,11 +100,11 @@ if __name__ == "__main__":
                 dropout_lstm=sampled_params["dropout_lstm"]
             )
 
-            print(history.history["val_mean_squared_error"][-25])
-            val_mean_squared_error = history.history["val_mean_squared_error"][-25]
-            val_pearsonr          =  history.history["val_pearsonr"][-25]
-            val_root_mean_squared_error = history.history["val_root_mean_squared_error"][-25]
-            val_mae = history.history["val_mae"][-25]
+            print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
+            val_mean_squared_error = history.history["val_mean_squared_error"][-MODEL_PATIENCE]
+            val_pearsonr          =  history.history["val_pearsonr"][-MODEL_PATIENCE]
+            val_root_mean_squared_error = history.history["val_root_mean_squared_error"][-MODEL_PATIENCE]
+            val_mae = history.history["val_mae"][-MODEL_PATIENCE]
             h = {
                 "val_mean_squared_error": float(val_mean_squared_error),
                 "val_pearsonr": float(val_pearsonr),

@@ -2,7 +2,7 @@ import lib.data
 import lib.embeddings
 import numpy as np
 import lib.mlp
-from lib.utils import get_config
+from lib.utils import get_config, MODEL_PATIENCE
 import json
 import random
 
@@ -106,11 +106,11 @@ if __name__ == "__main__":
                 dropout=sampled_params["dropout"]
             )
 
-            print(history.history["val_mean_squared_error"][-25])
-            val_mean_squared_error = history.history["val_mean_squared_error"][-25]
-            val_pearsonr          =  history.history["val_pearsonr"][-25]
-            val_root_mean_squared_error = history.history["val_root_mean_squared_error"][-25]
-            val_mae = history.history["val_mae"][-25]
+            print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
+            val_mean_squared_error = history.history["val_mean_squared_error"][-MODEL_PATIENCE]
+            val_pearsonr          =  history.history["val_pearsonr"][-MODEL_PATIENCE]
+            val_root_mean_squared_error = history.history["val_root_mean_squared_error"][-MODEL_PATIENCE]
+            val_mae = history.history["val_mae"][-MODEL_PATIENCE]
             h = {
                 "val_mean_squared_error": float(val_mean_squared_error),
                 "val_pearsonr": float(val_pearsonr),

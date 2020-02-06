@@ -2,7 +2,7 @@ import tensorflow.keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, BatchNormalization, Activation, Dropout
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS
+from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS, MODEL_PATIENCE
 import numpy as np
 
 
@@ -34,7 +34,7 @@ def fit_model(x, y, x_val, y_val, batch_size, epochs, learning_rate, name, layer
     tensorflow.compat.v1.set_random_seed(seed)
     model = build_compile_model(learning_rate, layers, dropout)
     callbacks = [
-        EarlyStopping(monitor='val_loss', patience=25, verbose=1, restore_best_weights=True),
+        EarlyStopping(monitor='val_loss', patience=MODEL_PATIENCE, verbose=1, restore_best_weights=True),
         ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=True)
     ]
     validation_data = None

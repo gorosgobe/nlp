@@ -2,7 +2,7 @@ import tensorflow.keras
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, BatchNormalization, Activation, concatenate, Input, LSTM, Dropout
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS, BASE_PADDING
+from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS, BASE_PADDING, MODEL_PATIENCE
 from lib.data import pad_to_length
 
 import numpy as np
@@ -67,8 +67,8 @@ def fit_model(english_x, german_x, y, batch_size, epochs, learning_rate,
         german_lstm_units=german_lstm_units
     )
     callbacks = [
-        EarlyStopping(monitor='val_loss', patience=40, verbose=1, restore_best_weights=True),
-        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=True)
+        EarlyStopping(monitor='val_loss', patience=MODEL_PATIENCE, verbose=1, restore_best_weights=True),
+        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=True)
     ]
 
     train_generator = batch_generator(english_x, german_x, y, batch_size)
@@ -77,11 +77,11 @@ def fit_model(english_x, german_x, y, batch_size, epochs, learning_rate,
     if english_x_val is not None and german_x_val is not None and y_val is not None:
         validation_generator = batch_generator(english_x_val, german_x_val, y_val, batch_size)
 
-    model.fit_generator(train_generator, steps_per_epoch=len(english_x)//batch_size, epochs=epochs,
+    history = model.fit_generator(train_generator, steps_per_epoch=len(english_x)//batch_size, epochs=epochs,
                         validation_data=validation_generator, validation_steps=len(english_x_val)//batch_size,
-                        verbose=1, callbacks=callbacks)
+                        verbose=0, callbacks=callbacks)
 
-    return model
+    return model, history
 
 def eval_model(x_test_english, x_test_german, y_test, model):
     score = model.evaluate([x_test_english, x_test_german], y_test)
