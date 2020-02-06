@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 from tensorflow.keras import backend as K
+import random
 
 def pearsonr(x, y):
     mx = K.mean(x)
@@ -27,8 +28,8 @@ CONSTANT_MAX_LENGTH_GERMAN_TEST    = 54
 
 # Maximum sequence length for english data
 CONSTANT_MAX_LENGTH_ENGLISH = max(
-    CONSTANT_MAX_LENGTH_ENGLISH_TRAIN, 
-    CONSTANT_MAX_LENGTH_ENGLISH_VAL, 
+    CONSTANT_MAX_LENGTH_ENGLISH_TRAIN,
+    CONSTANT_MAX_LENGTH_ENGLISH_VAL,
     CONSTANT_MAX_LENGTH_ENGLISH_TEST
 )
 
@@ -42,3 +43,6 @@ CONSTANT_MAX_LENGTH_GERMAN = max(
 BASE_PADDING = [0.0 for _ in range(100)]
 
 EVALUATION_METRICS = ['mean_squared_error', "mae", tf.keras.metrics.RootMeanSquaredError(), pearsonr]
+
+def get_config(params):
+    return {p: params[p][random.randint(0, len(params[p]) - 1)] for p in params}
