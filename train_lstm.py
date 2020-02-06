@@ -110,6 +110,7 @@ if __name__ == "__main__":
                 "val_pearsonr": float(val_pearsonr),
                 "val_rmse": float(val_root_mean_squared_error),
                 "val_mae": float(val_mae),
+                "best_epoch": len(history.history["val_mean_squared_error"]) - MODEL_PATIENCE,
                 **sampled_params
             }
             with open("results_lstm.json", "a") as f:
