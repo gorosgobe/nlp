@@ -11,8 +11,18 @@ import numpy as np
 def _get_single_conv(max_len, dim, *, stride,
                                       filter_sizes,
                                       filter_counts,
-                                      dropout_rate,
                                       pooling_type):
+
+    """
+    Gets a single CNN for a particular language.
+    :param max_len: Maximum sentence length (number of rows)
+    :param dim: Dimension of each word
+    :param stride: stride of convolution
+    :param filter_sizes: A list of sizes of each filter
+    :param filter_counts: A list of the number of filter of each size. Should be same length as filter_sizes.
+    :param pooling_type: String specifying the pooling type used. "max" for max pooling, "avg", for average pooling.
+    :returns: The CNN model
+    """
 
     assert len(filter_sizes) == len(filter_counts), "Filter sizes should be the same length as\
                                                       the number of filter"
@@ -22,6 +32,8 @@ def _get_single_conv(max_len, dim, *, stride,
 
     outputs_to_concat = []
     for filter_size, filter_count in zip(filter_sizes, filter_counts):
+        # for each filter_size -> convolve -> batch norm -> activate -> pool
+
         conv_output = Conv1D(
             filters=filter_count,
             kernel_size=filter_size,
@@ -40,9 +52,8 @@ def _get_single_conv(max_len, dim, *, stride,
 
         outputs_to_concat.append(pool_output)
 
+    # concatenate the outputs
     output = concatenate(outputs_to_concat)
-
-    output = Dropout(dropout_rate)(output)
 
     model =  Model(inputs=input_, outputs=output)
     model.summary()
@@ -60,7 +71,16 @@ def build_word_level_conv_net(max_english_len,
                             pooling_type,
                             fc_layers):
     """
-    Builds a word level convolutional neural network
+    :param max_english_len: Max English sentence length
+    :param english_dim: English word dimension
+    :param max_german_len: Max German sentence length
+    :param german_dim: Max German word dimension
+    :param stride: Convolution stride
+    :param filter_sizes: A list of sizes of each filter
+    :param filter_counts: A list of the number of filter of each size. Should be same length as filter_sizes.
+    :param dropout_rate: Dropout rate
+    :param pooling_type: String specifying the pooling type used. "max" for max pooling, "avg", for average pooling.
+    :param fc_layers: List of nodes in each fully connected layer
     """
 
     english_input = Input(shape=(max_english_len, english_dim), name="english_input")
@@ -70,16 +90,18 @@ def build_word_level_conv_net(max_english_len,
                                     stride=stride,
                                     filter_sizes=filter_sizes,
                                     filter_counts=filter_counts,
-                                    dropout_rate=dropout_rate,
-                                    pooling_type=pooling_type)
+                                    pooling_type=pooling_type)(english_input)
+
     german_conv = _get_single_conv(max_german_len, german_dim,
                                    stride=stride,
                                    filter_sizes=filter_sizes,
                                    filter_counts=filter_counts,
-                                   dropout_rate=dropout_rate,
-                                   pooling_type=pooling_type)
+                                   pooling_type=pooling_type)(german_input)
 
-    x = concatenate([english_conv(english_input), german_conv(german_input)])
+
+    x = concatenate([english_conv, german_conv])
+
+    x = Dropout(dropout_rate)(x)
 
     for layer_size in fc_layers:
         x = Dense(layer_size, activation="relu")(x)
