@@ -69,7 +69,8 @@ def build_word_level_conv_net(max_english_len,
                             filter_counts,
                             dropout_rate,
                             pooling_type,
-                            fc_layers):
+                            fc_layers,
+                            learning_rate):
     """
     :param max_english_len: Max English sentence length
     :param english_dim: English word dimension
@@ -81,6 +82,7 @@ def build_word_level_conv_net(max_english_len,
     :param dropout_rate: Dropout rate
     :param pooling_type: String specifying the pooling type used. "max" for max pooling, "avg", for average pooling.
     :param fc_layers: List of nodes in each fully connected layer
+    :param learning_rate: Initial learning rate
     """
 
     english_input = Input(shape=(max_english_len, english_dim), name="english_input")
@@ -113,7 +115,7 @@ def build_word_level_conv_net(max_english_len,
 
     model.compile(
         loss="mse",
-        optimizer=Adam(learning_rate=0.0001),
+        optimizer=Adam(learning_rate=learning_rate),
         metrics=EVALUATION_METRICS,
     )
     model.summary()
@@ -149,7 +151,7 @@ def fit_model(english_x_train, german_x_train, y_train, batch_size, epochs,
                                 "german_input": german_x_val},
                                 y_val]
 
-    model.fit({"english_input": english_x_train, "german_input": german_x_train},
+    history = model.fit({"english_input": english_x_train, "german_input": german_x_train},
               y_train, batch_size=batch_size, epochs=epochs, verbose=1,
               validation_data=validation_data, callbacks=callbacks)
-    return model
+    return model, history
