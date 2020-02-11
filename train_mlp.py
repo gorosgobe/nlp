@@ -3,9 +3,11 @@ import lib.embeddings
 import numpy as np
 import lib.mlp
 from lib.utils import get_config, MODEL_PATIENCE
-import json
 import random
+import os
+import csv
 
+HYPERPARAM_SEARCH_FILE = "results_mlp.csv"
 
 if __name__ == "__main__":
     print("Loading training data...")
@@ -88,7 +90,7 @@ if __name__ == "__main__":
 
         print("Hyperparameter search")
 
-        for _ in range(250):
+        for _ in range(4000):
             sampled_params = get_config(params)
             print("Configuration:")
             print(sampled_params)
@@ -119,8 +121,14 @@ if __name__ == "__main__":
                 "best_epoch": len(history.history["val_mean_squared_error"]) - MODEL_PATIENCE,
                 **sampled_params
             }
-            with open("results.json", "a") as f:
-                f.write(json.dumps(h))
-                f.write("\n")
+
+            file_exists = os.path.exists(HYPERPARAM_SEARCH_FILE)
+            with open(HYPERPARAM_SEARCH_FILE, "a") as f:
+                writer = csv.DictWriter(f, fieldnames=sorted(h.keys()), dialect="unix")
+
+                if not file_exists:
+                    writer.writeheader()
+            
+                writer.writerow(h)
     else:
         model = lib.mlp.fit_model(embeddings, train_scores, batch_size=128, epochs=500, x_val=val_embeddings, y_val=val_scores, name='mlp_model_best')

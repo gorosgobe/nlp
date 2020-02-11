@@ -7,7 +7,7 @@ from lib.utils import MODEL_PATIENCE
 import csv
 import os
 
-HYPERPARAM_SEARCH_FILE = "results_conv.txt"
+HYPERPARAM_SEARCH_FILE = "results_conv.csv"
 
 if __name__ == "__main__":
     print("Loading training data...")

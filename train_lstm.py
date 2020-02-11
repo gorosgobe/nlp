@@ -3,8 +3,11 @@ import lib.embeddings
 import numpy as np
 import lib.lstm
 import random
-import json
+import csv
+import os
 from lib.utils import get_config, MODEL_PATIENCE
+
+HYPERPARAM_SEARCH_FILE = "results_lstm.csv"
 
 if __name__ == "__main__":
 
@@ -113,9 +116,15 @@ if __name__ == "__main__":
                 "best_epoch": len(history.history["val_mean_squared_error"]) - MODEL_PATIENCE,
                 **sampled_params
             }
-            with open("results_lstm.json", "a") as f:
-                f.write(json.dumps(h))
-                f.write("\n")
+
+            file_exists = os.path.exists(HYPERPARAM_SEARCH_FILE)
+            with open(HYPERPARAM_SEARCH_FILE, "a") as f:
+                writer = csv.DictWriter(f, fieldnames=sorted(h.keys()), dialect="unix")
+
+                if not file_exists:
+                    writer.writeheader()
+            
+                writer.writerow(h)
     else:
         print("Training model")
         model = lib.lstm.fit_model(
