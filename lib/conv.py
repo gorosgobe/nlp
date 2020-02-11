@@ -56,7 +56,6 @@ def _get_single_conv(max_len, dim, *, stride,
     output = concatenate(outputs_to_concat)
 
     model =  Model(inputs=input_, outputs=output)
-    model.summary()
     return model
 
 def build_word_level_conv_net(max_english_len,
@@ -118,7 +117,6 @@ def build_word_level_conv_net(max_english_len,
         optimizer=Adam(learning_rate=learning_rate),
         metrics=EVALUATION_METRICS,
     )
-    model.summary()
     return model
 
 

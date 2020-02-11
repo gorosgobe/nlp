@@ -4,6 +4,10 @@ import numpy as np
 import lib.conv
 import random
 from lib.utils import MODEL_PATIENCE
+import csv
+import os
+
+HYPERPARAM_SEARCH_FILE = "results_conv.txt"
 
 if __name__ == "__main__":
     print("Loading training data...")
@@ -11,8 +15,7 @@ if __name__ == "__main__":
 
     sources_tok, source_vocab = lib.data.tokenize(train_source)
     translation_tok, translation_vocab = lib.data.tokenize(train_translation)
-    # import pdb
-    # pdb.set_trace()
+
     ENGLISH_EMBEDDING_MODEL = "embeddings/en_model_downsampled.bin"
     GERMAN_EMBEDDING_MODEL = "embeddings/de_model_downsampled.bin"
 
@@ -72,7 +75,9 @@ if __name__ == "__main__":
     german_x_val  = np.array(val_german_vectors)
 
 
-    for _ in range(3000):
+
+
+    for _ in range(5000):
         network_params = {}
         network_params["stride"] = random.choice([1,2])
 
@@ -119,6 +124,12 @@ if __name__ == "__main__":
             "best_epoch": len(history.history["val_mean_squared_error"]) - MODEL_PATIENCE,
             **network_params
         }
-        with open("results_conv.txt", "a") as f:
-            f.write(json.dumps(h))
-            f.write("\n")
+
+        file_exists = os.path.exists(HYPERPARAM_SEARCH_FILE)
+        with open(HYPERPARAM_SEARCH_FILE, "a") as f:
+            writer = csv.DictWriter(f, fieldnames=sorted(h.keys()), dialect="unix")
+
+            if not file_exists:
+                writer.writeheader()
+            
+            writer.writerow(h)
