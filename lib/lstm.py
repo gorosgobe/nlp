@@ -1,6 +1,6 @@
 import tensorflow.keras
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Dense, BatchNormalization, Activation, concatenate, Input, LSTM, Dropout
+from tensorflow.keras.layers import Dense, BatchNormalization, Activation, concatenate, Input, LSTM, Dropout, Bidirectional
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS, BASE_PADDING, MODEL_PATIENCE
 from lib.data import pad_to_length
@@ -9,7 +9,7 @@ import numpy as np
 
 def build_compile_model(
         english_dimensionality, german_dimensionality, learning_rate,
-        layers, dropout, english_lstm_units, german_lstm_units, dropout_lstm
+        layers, dropout, english_lstm_units, german_lstm_units, dropout_lstm, bidirectional=False
     ):
     """
     Builds a LSTM model
@@ -20,11 +20,17 @@ def build_compile_model(
     german_input = Input(shape=(None, german_dimensionality), name='german_input')
 
     # english branch
-    x = LSTM(english_lstm_units)(english_input)
+    if bidirectional:
+        x = Bidirectional(LSTM(english_lstm_units))(english_input)
+    else:
+        x = LSTM(english_lstm_units)(english_input)
     x = Model(inputs=english_input, outputs=x)
 
     # german branch
-    y = LSTM(german_lstm_units)(german_input)
+    if bidirectional:
+        y = Bidirectional(LSTM(german_lstm_units))(german_input)
+    else:
+        y = LSTM(german_lstm_units)(german_input)
     y = Model(inputs=german_input, outputs=y)
 
     # combine the output of the two branches
@@ -50,7 +56,7 @@ def build_compile_model(
 
 def fit_model(english_x, german_x, y, batch_size, epochs, learning_rate,
               layers, dropout, english_lstm_units, german_lstm_units,
-              dropout_lstm, english_x_val, german_x_val, y_val, name, seed=2019):
+              dropout_lstm, english_x_val, german_x_val, y_val, name, bidirectional=False, seed=2019, verbose=0):
     """
     Builds, compiles and trains model on given dataset
     english_x, german_x: size (7000, max_len_sentence, 100)
@@ -64,11 +70,11 @@ def fit_model(english_x, german_x, y, batch_size, epochs, learning_rate,
     model = build_compile_model(
         100, 100, learning_rate=learning_rate, layers=layers, dropout=dropout,
         dropout_lstm=dropout_lstm, english_lstm_units=english_lstm_units,
-        german_lstm_units=german_lstm_units
+        german_lstm_units=german_lstm_units, bidirectional=bidirectional
     )
     callbacks = [
-        EarlyStopping(monitor='val_loss', patience=MODEL_PATIENCE, verbose=1, restore_best_weights=True),
-        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=True)
+        EarlyStopping(monitor='val_loss', patience=MODEL_PATIENCE, verbose=verbose, restore_best_weights=True),
+        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=verbose, save_best_only=True, save_weights_only=True)
     ]
 
     train_generator = batch_generator(english_x, german_x, y, batch_size)
@@ -79,7 +85,7 @@ def fit_model(english_x, german_x, y, batch_size, epochs, learning_rate,
 
     history = model.fit_generator(train_generator, steps_per_epoch=len(english_x)//batch_size, epochs=epochs,
                         validation_data=validation_generator, validation_steps=len(english_x_val)//batch_size,
-                        verbose=0, callbacks=callbacks)
+                        verbose=verbose, callbacks=callbacks)
 
     return model, history
 

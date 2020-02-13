@@ -15,8 +15,7 @@ if __name__ == "__main__":
 
     sources_tok, source_vocab = lib.data.tokenize(train_source)
     translation_tok, translation_vocab = lib.data.tokenize(train_translation)
-    # import pdb
-    # pdb.set_trace()
+
     ENGLISH_EMBEDDING_MODEL = "embeddings/en_model_downsampled.bin"
     GERMAN_EMBEDDING_MODEL = "embeddings/de_model_downsampled.bin"
 
@@ -79,6 +78,29 @@ if __name__ == "__main__":
     print("Concatenating for validation")
     val_embeddings = np.concatenate((val_english_average_sentence_embeddings, val_german_average_sentence_embeddings), axis=1)
 
+    print("Loading test data...")
+    test_source, test_translation, _ = lib.data.load_data(data_type=lib.data.DatasetType.TEST, target_language=lib.data.Language.GERMAN)
+    test_src_tok, test_src_vocab = lib.data.tokenize(test_source)
+    test_trans_tok, test_trans_vocab = lib.data.tokenize(test_translation)
+
+    print("Computing test english word embeddings")
+    test_english_vectors, _ = lib.embeddings.get_embeddings(
+        english_embedding_model,
+        test_src_tok,
+        lib.embeddings.EmbeddingType.WORD2VEC
+    )
+
+    print("Computing test german word embeddings")
+    test_german_vectors,  _ = lib.embeddings.get_embeddings(
+        german_embedding_model,
+        test_trans_tok,
+        lib.embeddings.EmbeddingType.WORD2VEC
+    )
+
+    test_english_avg_sentence_embeddings = lib.embeddings.get_sentence_embeddings(test_english_vectors) 
+    test_german_avg_sentence_embeddings = lib.embeddings.get_sentence_embeddings(test_german_vectors)
+    assert test_english_avg_sentence_embeddings.shape == test_german_avg_sentence_embeddings.shape
+
     if True:
         params = {
             "learning_rate": [0.000001 * x for x in range(1000)],
@@ -90,7 +112,7 @@ if __name__ == "__main__":
 
         print("Hyperparameter search")
 
-        for _ in range(4000):
+        for _ in range(20000):
             sampled_params = get_config(params)
             print("Configuration:")
             print(sampled_params)
@@ -131,4 +153,53 @@ if __name__ == "__main__":
             
                 writer.writerow(h)
     else:
-        model = lib.mlp.fit_model(embeddings, train_scores, batch_size=128, epochs=500, x_val=val_embeddings, y_val=val_scores, name='mlp_model_best')
+        print("Evaluation: Combine train and val data for re-training")
+        train_source = np.concatenate((train_source, val_source), axis=0)
+        train_translation = np.concatenate((train_translation, val_translation), axis=0)
+        train_scores = np.concatenate((train_scores, val_scores), axis=0)
+
+        sources_tok, source_vocab = lib.data.tokenize(train_source)
+        translation_tok, translation_vocab = lib.data.tokenize(train_translation)
+
+        # training vectors
+        print("Computing combined training english word embeddings...")
+        english_vectors,  _ignored_english_words = lib.embeddings.get_embeddings(
+            english_embedding_model,
+            sources_tok,
+            lib.embeddings.EmbeddingType.WORD2VEC
+        )
+
+        print("Computing combined training german word embeddings...")
+        german_vectors,  _ignored_german_words = lib.embeddings.get_embeddings(
+            german_embedding_model,
+            translation_tok,
+            lib.embeddings.EmbeddingType.WORD2VEC
+        )
+
+        english_average_sentence_embeddings = lib.embeddings.get_sentence_embeddings(english_vectors)
+        german_average_sentence_embeddings = lib.embeddings.get_sentence_embeddings(german_vectors)
+        assert english_average_sentence_embeddings.shape == german_average_sentence_embeddings.shape
+
+        print("Concatenating for training")
+        embeddings = np.concatenate((english_average_sentence_embeddings, german_average_sentence_embeddings), axis=1)
+        
+        print("Concatenating for testing")
+        test_embeddings = np.concatenate((test_english_avg_sentence_embeddings, test_german_avg_sentence_embeddings), axis=1)
+
+        model, _ = lib.mlp.fit_model(
+            embeddings,
+            train_scores,
+            batch_size=128,
+            epochs=12,
+            learning_rate=0.000484,
+            x_val=None,
+            y_val=None,
+            name='mlp_best_tuned_model',
+            layers=[512, 128, 64, 256],
+            dropout=0.33,
+            verbose=1
+        )
+
+        predictions = model.predict(test_embeddings)
+        np.savetxt('predictions.txt', predictions, delimiter=',', fmt='%f')
+

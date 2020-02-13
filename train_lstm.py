@@ -100,7 +100,8 @@ if __name__ == "__main__":
                 dropout=sampled_params["dropout"],
                 english_lstm_units=sampled_params["english_lstm"],
                 german_lstm_units=sampled_params["german_lstm"],
-                dropout_lstm=sampled_params["dropout_lstm"]
+                dropout_lstm=sampled_params["dropout_lstm"],
+                bidirectional=True
             )
 
             print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
@@ -127,14 +128,22 @@ if __name__ == "__main__":
                 writer.writerow(h)
     else:
         print("Training model")
-        model = lib.lstm.fit_model(
-            english_x=english_vectors,
-            german_x=german_vectors,
-            y=train_scores,
-            batch_size=32,
-            epochs=500,
-            english_x_val=val_english_vectors,
-            german_x_val=val_german_vectors,
-            y_val=val_scores,
-            name='lstm_model_best'
-        )
+        model, _ = lib.lstm.fit_model(
+                english_x=english_vectors,
+                german_x=german_vectors,
+                y=train_scores,
+                batch_size=256,
+                epochs=17,
+                learning_rate=0.00094,
+                english_x_val=val_english_vectors,
+                german_x_val=val_german_vectors,
+                y_val=val_scores,
+                name='lstm_model_best',
+                layers=[256, 64],
+                dropout=0.38,
+                english_lstm_units=512,
+                german_lstm_units=32,
+                dropout_lstm=0.28,
+                bidirectional=True,
+                verbose=1
+            )
