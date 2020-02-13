@@ -101,7 +101,7 @@ if __name__ == "__main__":
     test_german_avg_sentence_embeddings = lib.embeddings.get_sentence_embeddings(test_german_vectors)
     assert test_english_avg_sentence_embeddings.shape == test_german_avg_sentence_embeddings.shape
 
-    if False:
+    if True:
         params = {
             "learning_rate": [0.000001 * x for x in range(1000)],
             "epochs": [250],
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
         print("Hyperparameter search")
 
-        for _ in range(4000):
+        for _ in range(20000):
             sampled_params = get_config(params)
             print("Configuration:")
             print(sampled_params)
