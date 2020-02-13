@@ -2,7 +2,7 @@ import tensorflow.keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, BatchNormalization, Activation, Dropout
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
-from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS, MODEL_PATIENCE
+from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS, MODEL_PATIENCE, pearson_loss
 import numpy as np
 
 
@@ -17,7 +17,7 @@ def build_compile_model(learning_rate, layers, dropout):
         model.add(Dropout(dropout))
     model.add(Dense(units=1))
     model.compile(
-        loss='mean_squared_error',
+        loss=pearson_loss,
         optimizer=tensorflow.keras.optimizers.Adam(learning_rate=learning_rate),
         metrics=EVALUATION_METRICS
     )

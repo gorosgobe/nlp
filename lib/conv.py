@@ -5,7 +5,7 @@ from tensorflow.keras.layers import Input, Conv1D, GlobalMaxPooling1D, concatena
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import regularizers
-from lib.utils import EVALUATION_METRICS, MODELS_SAVE_PATH
+from lib.utils import EVALUATION_METRICS, MODELS_SAVE_PATH, pearson_loss
 import numpy as np
 
 def _get_single_conv(max_len, dim, *, stride,
@@ -113,7 +113,7 @@ def build_word_level_conv_net(max_english_len,
     model = Model(inputs=[english_input, german_input], outputs=output)
 
     model.compile(
-        loss="mse",
+        loss=pearson_loss,
         optimizer=Adam(learning_rate=learning_rate),
         metrics=EVALUATION_METRICS,
     )

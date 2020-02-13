@@ -107,8 +107,8 @@ if __name__ == "__main__":
                 layers=sampled_params["layers"],
                 dropout=sampled_params["dropout"]
             )
-
-            print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
+            print(history.history["val_loss"][-MODEL_PATIENCE])
+            print(history.history["val_pearsonr"][-MODEL_PATIENCE])
             val_mean_squared_error = history.history["val_mean_squared_error"][-MODEL_PATIENCE]
             val_pearsonr          =  history.history["val_pearsonr"][-MODEL_PATIENCE]
             val_root_mean_squared_error = history.history["val_root_mean_squared_error"][-MODEL_PATIENCE]
