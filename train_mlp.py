@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
         print("Hyperparameter search")
 
-        for _ in range(4000):
+        for _ in range(20000):
             sampled_params = get_config(params)
             print("Configuration:")
             print(sampled_params)
