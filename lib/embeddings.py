@@ -50,8 +50,7 @@ def augment_dataset(source_sentences, translation_sentences, targets, source_big
                     og = word
                     max_similarity = most_similar_score
                     chosen_index = candidate_index
-        if idx == 20:
-            break
+                    
         #print("Sentence: ", sentence)
         #print("Candidate word, ", candidate)
         augmented_sentence = sentence[:]
