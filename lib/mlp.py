@@ -23,7 +23,7 @@ def build_compile_model(learning_rate, layers, dropout):
     )
     return model
 
-def fit_model(x, y, x_val, y_val, batch_size, epochs, learning_rate, name, layers, dropout, seed=2019):
+def fit_model(x, y, x_val, y_val, batch_size, epochs, learning_rate, name, layers, dropout, seed=2019, verbose=0):
     """
     Builds, compiles and trains model on given dataset
     x: size (7000, 200)
@@ -35,13 +35,13 @@ def fit_model(x, y, x_val, y_val, batch_size, epochs, learning_rate, name, layer
     model = build_compile_model(learning_rate, layers, dropout)
     callbacks = [
         EarlyStopping(monitor='val_loss', patience=MODEL_PATIENCE, verbose=1, restore_best_weights=True),
-        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=0, save_best_only=True, save_weights_only=True)
+        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=verbose, save_best_only=True, save_weights_only=True)
     ]
     validation_data = None
     if x_val is not None and y_val is not None:
         validation_data = [x_val, y_val]
 
-    history = model.fit(x, y, batch_size=batch_size, epochs=epochs, verbose=0, validation_data=validation_data, callbacks=callbacks)
+    history = model.fit(x, y, batch_size=batch_size, epochs=epochs, verbose=verbose, validation_data=validation_data, callbacks=callbacks)
     return model, history
 
 def eval_model(x_test, y_test, model):
