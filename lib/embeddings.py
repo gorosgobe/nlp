@@ -1,6 +1,7 @@
 import enum
 from gensim.models import KeyedVectors
 import numpy as np
+from lib.utils import PAD_TOK
 
 class EmbeddingType(enum.Enum):
     WORD2VEC = 0
@@ -16,8 +17,9 @@ def load_embedding(path, embedding_type):
 def load_word2vec_embedding(path):
     # path should be .bin
     model = KeyedVectors.load_word2vec_format(path, binary=True)
+    # TODO: remove 100 hardcoded
+    model.add([PAD_TOK], [np.zeros(100)])
     return model
-
 
 def reduce_word2vec_vocab(input_path, output_path, vocab):
     # TODO: docstring
@@ -54,6 +56,22 @@ def get_embeddings(model, tokenized_sentences, embedding_type, print_max_length=
         print(f"Max length for sentence: {max_len_sentence}")
 
     return res, ignored
+
+def get_embedding_input(data_tok, model, max_sent_len):
+    num_sentences = len(data_tok)
+    pad_idx = model.vocab[PAD_TOK].index
+
+    # initialise with pad token
+    out = np.full((num_sentences, max_sent_len), pad_idx)
+
+    for sentence_idx, sentence in enumerate(data_tok):
+        word_idx = 0    
+        for word in sentence:
+            if word in model.vocab:
+                out[sentence_idx][word_idx] = model.vocab[word].index
+                word_idx += 1
+
+    return out
 
 def get_sentence_embeddings(word_embeddings):
     """
