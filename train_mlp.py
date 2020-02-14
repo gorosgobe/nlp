@@ -101,6 +101,22 @@ if __name__ == "__main__":
     test_german_avg_sentence_embeddings = lib.embeddings.get_sentence_embeddings(test_german_vectors)
     assert test_english_avg_sentence_embeddings.shape == test_german_avg_sentence_embeddings.shape
 
+    model, history = lib.mlp.fit_model(
+        embeddings,
+        train_scores,
+        batch_size=32,
+        epochs=500,
+        learning_rate=0.001,
+        x_val=val_embeddings,
+        y_val=val_scores,
+        name='mlp_model_best',
+        layers=[10, 20],
+        dropout=0.1,
+        verbose=1,
+    )
+
+    exit()
+
     if True:
         params = {
             "learning_rate": [0.000001 * x for x in range(1000)],

@@ -39,14 +39,17 @@ def build_compile_model_embedding_layer(english_input_shape,
     english_embedded = get_keras_embedding(english_w2v)(english_input)
     german_embedded = get_keras_embedding(german_w2v)(german_input)
 
-    english_embedded_sum = Lambda(lambda x: K.sum(x, axis=1))(english_embedded)
-    german_embedded_sum = Lambda(lambda x: K.sum(x, axis=1))(german_embedded)
+    english_embedded_sum = Lambda(lambda x: K.sum(x, axis=1), name="english_sum")(english_embedded)
+    german_embedded_sum = Lambda(lambda x: K.sum(x, axis=1), name="german_sum")(german_embedded)
 
-    english_sent_lens = Lambda(lambda x: K.sum(K.cast(K.not_equal(x, 0), "float32"), keepdims=True))(english_input)
-    german_sent_lens = Lambda(lambda x: K.sum(K.cast(K.not_equal(x, 0), "float32"), keepdims=True))(german_input)
+    english_pad_tok = english_w2v.vocab[PAD_TOK].index
+    german_pad_tok = german_w2v.vocab[PAD_TOK].index
 
-    english_avg = Lambda(lambda inputs: inputs[0] / inputs[1])([english_embedded_sum, english_sent_lens])
-    german_avg = Lambda(lambda inputs: inputs[0] / inputs[1])([german_embedded_sum, german_sent_lens])
+    english_sent_lens = Lambda(lambda x: K.sum(K.cast(K.not_equal(x, english_pad_tok), "float32"), keepdims=True), name="enlish_len")(english_input)
+    german_sent_lens = Lambda(lambda x: K.sum(K.cast(K.not_equal(x, german_pad_tok), "float32"), keepdims=True), name="german_len")(german_input)
+
+    english_avg = Lambda(lambda inputs: inputs[0] / inputs[1], name="english_avg")([english_embedded_sum, english_sent_lens])
+    german_avg = Lambda(lambda inputs: inputs[0] / inputs[1], name="german_avg")([german_embedded_sum, german_sent_lens])
 
     mlp = Sequential()
     mlp.add(Dense(units=layers[0], activation="relu", input_dim=200))
@@ -104,7 +107,7 @@ def fit_model_embedding_layer(english_x_train, german_x_train, y_train, english_
                                 y_val]
 
     history = model.fit(x={"english_input": english_x_train, "german_input": german_x_train},
-                        y=y_train, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=validation_data, callbacks=callbacks)
+                        y=y_train, batch_size=batch_size, epochs=epochs, verbose=verbose, validation_data=validation_data, callbacks=callbacks)
     return model, history
 
 

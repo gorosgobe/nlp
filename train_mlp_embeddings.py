@@ -50,6 +50,27 @@ if __name__ == "__main__":
     test_src_tok, _ = lib.data.tokenize(test_source)
     test_trans_tok, _ = lib.data.tokenize(test_translation)
 
+    model, history = lib.mlp.fit_model_embedding_layer(
+        english_x_train=train_source_input, 
+        german_x_train=train_translation_input, 
+        y_train=train_scores, 
+        english_x_val=val_source_input, 
+        german_x_val=val_translation_input, 
+        y_val=val_scores, 
+        english_w2v=english_embedding_model, 
+        german_w2v=german_embedding_model, 
+        batch_size=32,
+        epochs=500,
+        learning_rate=0.001, 
+        name="", 
+        layers=[10,20], 
+        dropout=0.1,
+        verbose=1,
+    )
+
+    exit()
+
+
     if True:
         params = {
             "learning_rate": [0.000001 * x for x in range(1000)],
