@@ -46,5 +46,7 @@ EVALUATION_METRICS = ['mean_squared_error', "mae", tf.keras.metrics.RootMeanSqua
 
 MODEL_PATIENCE = 25
 
+PAD_TOK = "<PAD>"
+
 def get_config(params):
     return {p: params[p][random.randint(0, len(params[p]) - 1)] for p in params}
