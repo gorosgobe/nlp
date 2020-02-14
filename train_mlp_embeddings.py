@@ -11,7 +11,6 @@ HYPERPARAM_SEARCH_FILE = "results_mlp.csv"
 
 if __name__ == "__main__":
 
-
     ENGLISH_EMBEDDING_MODEL = "embeddings/en_model_downsampled.bin"
     GERMAN_EMBEDDING_MODEL = "embeddings/de_model_downsampled.bin"
 
@@ -45,15 +44,13 @@ if __name__ == "__main__":
     val_translation_input = lib.embeddings.get_embedding_input(data_tok=val_translation_tok,
                                                                 model=german_embedding_model,
                                                                 max_sent_len=CONSTANT_MAX_LENGTH_GERMAN)
-    import pdb; pdb.set_trace()
 
     print("Loading test data...")
     test_source, test_translation, _ = lib.data.load_data(data_type=lib.data.DatasetType.TEST, target_language=lib.data.Language.GERMAN)
     test_src_tok, _ = lib.data.tokenize(test_source)
     test_trans_tok, _ = lib.data.tokenize(test_translation)
 
-
-    if False:
+    if True:
         params = {
             "learning_rate": [0.000001 * x for x in range(1000)],
             "epochs": [250],
@@ -69,17 +66,21 @@ if __name__ == "__main__":
             print("Configuration:")
             print(sampled_params)
 
-            model, history = lib.mlp.fit_model(
-                embeddings,
-                train_scores,
-                batch_size=sampled_params['batch_size'],
-                epochs=sampled_params['epochs'],
-                learning_rate=sampled_params['learning_rate'],
-                x_val=val_embeddings,
-                y_val=val_scores,
-                name='mlp_model_best',
-                layers=sampled_params["layers"],
-                dropout=sampled_params["dropout"]
+            model, history = lib.mlp.fit_model_embedding_layer(
+                english_x_train=train_source_input, 
+                german_x_train=train_translation_input, 
+                y_train=train_scores, 
+                english_x_val=val_source_input, 
+                german_x_val=val_translation_input, 
+                y_val=val_scores, 
+                english_w2v=english_embedding_model, 
+                german_w2v=german_embedding_model, 
+                batch_size=sampled_params["batch_size"],
+                epochs=sampled_params["epochs"],
+                learning_rate=sampled_params["learning_rate"], 
+                name="", 
+                layers=sampled_params["layers"], 
+                dropout=sampled_params["dropout"],
             )
 
             print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])

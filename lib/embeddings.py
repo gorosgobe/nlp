@@ -1,5 +1,6 @@
 import enum
 from gensim.models import KeyedVectors
+from tensorflow.keras.layers import Embedding
 import numpy as np
 import random
 from lib.utils import PAD_TOK
@@ -105,6 +106,23 @@ def get_embedding_input(data_tok, model, max_sent_len):
                 word_idx += 1
 
     return out
+
+def get_keras_embedding(model, trainable=False):
+
+    vocab_size = len(model.vocab)
+    weights = []
+    for i in range(vocab_size):
+        weights.append(model[model.index2entity[i]])
+
+    weights = np.array(weights)
+
+    return Embedding(
+        input_dim=weights.shape[0],
+        output_dim=weights.shape[1],
+        weights=[weights],
+        trainable=trainable,
+    )
+
 
 def get_sentence_embeddings(word_embeddings):
     """
