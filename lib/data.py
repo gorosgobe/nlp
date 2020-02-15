@@ -24,13 +24,13 @@ def load_text(path):
     return np.array(read_text)
     
 
-def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN):
+def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN, augmented=False):
     if target_language == Language.ENGLISH:
         raise ValueError("Target language cannot be english")
     
     base_path = DATASETS_BASE_PATH
     if target_language == Language.GERMAN:
-        language_folder = "en-de"
+        language_folder = "en-de" if not augmented else "en-de-aug"
         language = "ende"
         path = os.path.join(base_path, language_folder)
     else:
