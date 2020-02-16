@@ -45,7 +45,7 @@ def augment_dataset(source_sentences, translation_sentences, targets, source_big
         max_similarity = 0
         for candidate_index, word in enumerate(sentence):
             if word in source_big_model.vocab and word not in [".", ",", "!", ":", ";", "-"]:
-                # flip word 
+                # flip word
                 result = source_big_model.most_similar(positive=[word], topn=1)
                 most_similar_word, most_similar_score = result[0]
                 if most_similar_score > max_similarity:
@@ -53,7 +53,7 @@ def augment_dataset(source_sentences, translation_sentences, targets, source_big
                     og = word
                     max_similarity = most_similar_score
                     chosen_index = candidate_index
-                    
+
         #print("Sentence: ", sentence)
         #print("Candidate word, ", candidate)
         augmented_sentence = sentence[:]
@@ -62,7 +62,7 @@ def augment_dataset(source_sentences, translation_sentences, targets, source_big
         augmented_english.append(augmented_sentence)
         augmented_german.append(translation_sentences[idx])
         augmented_targets.append(targets[idx])
-        
+
     return augmented_english, augmented_german, augmented_targets
 
 
@@ -99,7 +99,7 @@ def get_embedding_input(data_tok, model, max_sent_len):
     out = np.full((num_sentences, max_sent_len), pad_idx)
 
     for sentence_idx, sentence in enumerate(data_tok):
-        word_idx = 0    
+        word_idx = 0
         for word in sentence:
             if word in model.vocab:
                 out[sentence_idx][word_idx] = model.vocab[word].index

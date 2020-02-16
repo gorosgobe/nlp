@@ -7,7 +7,7 @@ import random
 import os
 import csv
 
-HYPERPARAM_SEARCH_FILE = "results_mlp.csv"
+HYPERPARAM_SEARCH_FILE = "results_mlp_embeddings.csv"
 
 if __name__ == "__main__":
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     val_source, val_translation, val_scores = lib.data.load_data(data_type=lib.data.DatasetType.VAL, target_language=lib.data.Language.GERMAN)
     val_sources_tok, _ = lib.data.tokenize(val_source)
     val_translation_tok, _ = lib.data.tokenize(val_translation)
-    
+
     val_source_input = lib.embeddings.get_embedding_input(data_tok=val_sources_tok,
                                                           model=english_embedding_model,
                                                           max_sent_len=CONSTANT_MAX_LENGTH_ENGLISH)
@@ -49,26 +49,6 @@ if __name__ == "__main__":
     test_source, test_translation, _ = lib.data.load_data(data_type=lib.data.DatasetType.TEST, target_language=lib.data.Language.GERMAN)
     test_src_tok, _ = lib.data.tokenize(test_source)
     test_trans_tok, _ = lib.data.tokenize(test_translation)
-
-    model, history = lib.mlp.fit_model_embedding_layer(
-        english_x_train=train_source_input, 
-        german_x_train=train_translation_input, 
-        y_train=train_scores, 
-        english_x_val=val_source_input, 
-        german_x_val=val_translation_input, 
-        y_val=val_scores, 
-        english_w2v=english_embedding_model, 
-        german_w2v=german_embedding_model, 
-        batch_size=32,
-        epochs=500,
-        learning_rate=0.001, 
-        name="", 
-        layers=[10,20], 
-        dropout=0.1,
-        verbose=1,
-    )
-
-    exit()
 
 
     if True:
@@ -88,19 +68,19 @@ if __name__ == "__main__":
             print(sampled_params)
 
             model, history = lib.mlp.fit_model_embedding_layer(
-                english_x_train=train_source_input, 
-                german_x_train=train_translation_input, 
-                y_train=train_scores, 
-                english_x_val=val_source_input, 
-                german_x_val=val_translation_input, 
-                y_val=val_scores, 
-                english_w2v=english_embedding_model, 
-                german_w2v=german_embedding_model, 
+                english_x_train=train_source_input,
+                german_x_train=train_translation_input,
+                y_train=train_scores,
+                english_x_val=val_source_input,
+                german_x_val=val_translation_input,
+                y_val=val_scores,
+                english_w2v=english_embedding_model,
+                german_w2v=german_embedding_model,
                 batch_size=sampled_params["batch_size"],
                 epochs=sampled_params["epochs"],
-                learning_rate=sampled_params["learning_rate"], 
-                name="", 
-                layers=sampled_params["layers"], 
+                learning_rate=sampled_params["learning_rate"],
+                name="",
+                layers=sampled_params["layers"],
                 dropout=sampled_params["dropout"],
             )
 
@@ -124,7 +104,7 @@ if __name__ == "__main__":
 
                 if not file_exists:
                     writer.writeheader()
-            
+
                 writer.writerow(h)
     else:
         print("Evaluation: Combine train and val data for re-training")
@@ -156,7 +136,7 @@ if __name__ == "__main__":
 
         print("Concatenating for training")
         embeddings = np.concatenate((english_average_sentence_embeddings, german_average_sentence_embeddings), axis=1)
-        
+
         print("Concatenating for testing")
         test_embeddings = np.concatenate((test_english_avg_sentence_embeddings, test_german_avg_sentence_embeddings), axis=1)
 
@@ -176,4 +156,3 @@ if __name__ == "__main__":
 
         predictions = model.predict(test_embeddings)
         np.savetxt('predictions.txt', predictions, delimiter=',', fmt='%f')
-

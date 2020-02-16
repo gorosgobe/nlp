@@ -25,9 +25,25 @@ def build_compile_model(learning_rate, layers, dropout):
     )
     return model
 
-def build_compile_model_embedding_layer(english_input_shape, 
-                                        german_input_shape, 
-                                        english_w2v, 
+def get_average_embedding_model(input_shape,
+                                w2v_model):
+    inputs = Input(shape=input_shape)
+    embedded = get_keras_embedding(w2v_model)(inputs)
+    embedded_sum = Lambda(lambda x: K.sum(x, axis=1), name="sum")(embedded)
+
+    pad_token = w2v_model.vocab[PAD_TOK].index
+    sent_lens = Lambda(lambda x: K.sum(K.cast(K.not_equal(x, pad_token), "float32"),
+                                       axis=1, keepdims=True), name="sent_len")(inputs)
+
+    avg = Lambda(lambda inputs: inputs[0] / inputs[1], name="avg")([embedded_sum,
+                                                                     sent_lens])
+
+    return Model(inputs=inputs, outputs=avg)
+
+
+def build_compile_model_embedding_layer(english_input_shape,
+                                        german_input_shape,
+                                        english_w2v,
                                         german_w2v,
                                         learning_rate,
                                         layers,
@@ -36,20 +52,8 @@ def build_compile_model_embedding_layer(english_input_shape,
     english_input = Input(shape=english_input_shape, name="english_input")
     german_input = Input(shape=german_input_shape, name="german_input")
 
-    english_embedded = get_keras_embedding(english_w2v)(english_input)
-    german_embedded = get_keras_embedding(german_w2v)(german_input)
-
-    english_embedded_sum = Lambda(lambda x: K.sum(x, axis=1), name="english_sum")(english_embedded)
-    german_embedded_sum = Lambda(lambda x: K.sum(x, axis=1), name="german_sum")(german_embedded)
-
-    english_pad_tok = english_w2v.vocab[PAD_TOK].index
-    german_pad_tok = german_w2v.vocab[PAD_TOK].index
-
-    english_sent_lens = Lambda(lambda x: K.sum(K.cast(K.not_equal(x, english_pad_tok), "float32"), keepdims=True), name="enlish_len")(english_input)
-    german_sent_lens = Lambda(lambda x: K.sum(K.cast(K.not_equal(x, german_pad_tok), "float32"), keepdims=True), name="german_len")(german_input)
-
-    english_avg = Lambda(lambda inputs: inputs[0] / inputs[1], name="english_avg")([english_embedded_sum, english_sent_lens])
-    german_avg = Lambda(lambda inputs: inputs[0] / inputs[1], name="german_avg")([german_embedded_sum, german_sent_lens])
+    english_avg = get_average_embedding_model(english_input_shape, english_w2v)(english_input)
+    german_avg = get_average_embedding_model(german_input_shape, german_w2v)(german_input)
 
     mlp = Sequential()
     mlp.add(Dense(units=layers[0], activation="relu", input_dim=200))
@@ -74,9 +78,9 @@ def build_compile_model_embedding_layer(english_input_shape,
 
 
 
-def fit_model_embedding_layer(english_x_train, german_x_train, y_train, english_x_val, german_x_val, y_val, 
+def fit_model_embedding_layer(english_x_train, german_x_train, y_train, english_x_val, german_x_val, y_val,
                               english_w2v, german_w2v, batch_size, epochs, learning_rate, name, layers, dropout, verbose=0, seed=0):
-        
+
     np.random.seed(seed)
     # apparently, this version is recommended as just set_random_seed is deprecated
     tensorflow.compat.v1.set_random_seed(seed)
