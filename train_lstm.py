@@ -6,7 +6,6 @@ import random
 import csv
 import os
 from lib.utils import get_config, MODEL_PATIENCE
-from lib.lstm import batch_generator
 
 HYPERPARAM_SEARCH_FILE = "results_lstm.csv"
 
@@ -77,14 +76,14 @@ if __name__ == "__main__":
             print(sampled_params)
 
             model, history = lib.lstm.fit_model(
-                english_x=tr,
-                german_x=german_vectors,
+                english_x=train_source_input,
+                german_x=train_translation_input,
                 y=train_scores,
                 batch_size=sampled_params['batch_size'],
                 epochs=sampled_params['epochs'],
                 learning_rate=sampled_params['learning_rate'],
-                english_x_val=val_english_vectors,
-                german_x_val=val_german_vectors,
+                english_x_val=val_source_input,
+                german_x_val=val_translation_input,
                 y_val=val_scores,
                 name='lstm_model_best',
                 layers=sampled_params["layers"],
@@ -118,6 +117,7 @@ if __name__ == "__main__":
             
                 writer.writerow(h)
     else:
+        # TODO: Refactor with correct inputs!
         print("Training model")
         model, _ = lib.lstm.fit_model(
                 english_x=english_vectors,
@@ -139,8 +139,8 @@ if __name__ == "__main__":
                 verbose=1
             )
 
-        test_generator = batch_generator(val_english_vectors, val_german_vectors, val_scores, 512)
-        score = model.evaluate_generator(test_generator, steps=2, verbose=1)
-        print(score)
+        # test_generator = batch_generator(val_english_vectors, val_german_vectors, val_scores, 512)
+        # score = model.evaluate_generator(test_generator, steps=2, verbose=1)
+        # print(score)
         # predictions = model.predict_generator(test_generator, steps=1, verbose=1)
         # np.savetxt('predictions.txt', predictions, delimiter=',', fmt='%f')
