@@ -2,120 +2,54 @@ import lib.data
 import lib.embeddings
 import numpy as np
 import lib.mlp
-from lib.utils import get_config, MODEL_PATIENCE
+from lib.utils import get_config, MODEL_PATIENCE, CONSTANT_MAX_LENGTH_ENGLISH, CONSTANT_MAX_LENGTH_GERMAN
 import random
 import os
 import csv
 
-HYPERPARAM_SEARCH_FILE = "results_mlp.csv"
+HYPERPARAM_SEARCH_FILE = "results_mlp_embeddings.csv"
 
 if __name__ == "__main__":
-    print("Loading training data...")
-    train_source, train_translation, train_scores = lib.data.load_data(data_type=lib.data.DatasetType.TRAIN, target_language=lib.data.Language.GERMAN)
-
-    sources_tok, source_vocab = lib.data.tokenize(train_source)
-    translation_tok, translation_vocab = lib.data.tokenize(train_translation)
 
     ENGLISH_EMBEDDING_MODEL = "embeddings/en_model_downsampled.bin"
     GERMAN_EMBEDDING_MODEL = "embeddings/de_model_downsampled.bin"
 
     print("Loading english embedding model...")
     english_embedding_model = lib.embeddings.load_embedding(ENGLISH_EMBEDDING_MODEL, lib.embeddings.EmbeddingType.WORD2VEC)
-    print("English model loaded")
+
     print("Loading german embedding model...")
     german_embedding_model = lib.embeddings.load_embedding(GERMAN_EMBEDDING_MODEL, lib.embeddings.EmbeddingType.WORD2VEC)
-    print("German model loaded")
 
-    # training vectors
-    print("Training data processing...")
-    print("Computing training english word embeddings...")
-    english_vectors,  _ignored_english_words = lib.embeddings.get_embeddings(
-        english_embedding_model,
-        sources_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
+    print("Loading training data...")
+    train_source, train_translation, train_scores = lib.data.load_data(data_type=lib.data.DatasetType.TRAIN, target_language=lib.data.Language.GERMAN)
+    train_sources_tok, _ = lib.data.tokenize(train_source)
+    train_translation_tok, _ = lib.data.tokenize(train_translation)
 
-    print("Computing training german word embeddings...")
-    german_vectors,  _ignored_german_words = lib.embeddings.get_embeddings(
-        german_embedding_model,
-        translation_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
+    train_source_input = lib.embeddings.get_embedding_input(data_tok=train_sources_tok,
+                                                            model=english_embedding_model,
+                                                            max_sent_len=CONSTANT_MAX_LENGTH_ENGLISH)
+    train_translation_input = lib.embeddings.get_embedding_input(data_tok=train_translation_tok,
+                                                                model=german_embedding_model,
+                                                                max_sent_len=CONSTANT_MAX_LENGTH_GERMAN)
 
-    english_average_sentence_embeddings = lib.embeddings.get_sentence_embeddings(english_vectors)
-    german_average_sentence_embeddings = lib.embeddings.get_sentence_embeddings(german_vectors)
-    assert english_average_sentence_embeddings.shape == german_average_sentence_embeddings.shape
 
-    # validation vectors
-    print("Validation data processing...")
-    print("Computing validation english word embeddings...")
+    print("Loading validation data...")
     val_source, val_translation, val_scores = lib.data.load_data(data_type=lib.data.DatasetType.VAL, target_language=lib.data.Language.GERMAN)
+    val_sources_tok, _ = lib.data.tokenize(val_source)
+    val_translation_tok, _ = lib.data.tokenize(val_translation)
 
-    val_sources_tok, val_source_vocab = lib.data.tokenize(val_source)
-    val_translation_tok, val_translation_vocab = lib.data.tokenize(val_translation)
-    val_english_vectors,  ignored_val_english_words = lib.embeddings.get_embeddings(
-        english_embedding_model,
-        val_sources_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
-
-    print("Computing validation german word embeddings...")
-    val_german_vectors,  ignored_val_german_words = lib.embeddings.get_embeddings(
-        german_embedding_model,
-        val_translation_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
-    print(f"Ignored words, english {len(ignored_val_english_words)}, german {len(ignored_val_english_words)}")
-
-
-    val_english_average_sentence_embeddings = lib.embeddings.get_sentence_embeddings(val_english_vectors)
-    val_german_average_sentence_embeddings = lib.embeddings.get_sentence_embeddings(val_german_vectors)
-    assert val_english_average_sentence_embeddings.shape == val_german_average_sentence_embeddings.shape
-
-    print("Concatenating for training")
-    embeddings = np.concatenate((english_average_sentence_embeddings, german_average_sentence_embeddings), axis=1)
-
-    print("Concatenating for validation")
-    val_embeddings = np.concatenate((val_english_average_sentence_embeddings, val_german_average_sentence_embeddings), axis=1)
+    val_source_input = lib.embeddings.get_embedding_input(data_tok=val_sources_tok,
+                                                          model=english_embedding_model,
+                                                          max_sent_len=CONSTANT_MAX_LENGTH_ENGLISH)
+    val_translation_input = lib.embeddings.get_embedding_input(data_tok=val_translation_tok,
+                                                                model=german_embedding_model,
+                                                                max_sent_len=CONSTANT_MAX_LENGTH_GERMAN)
 
     print("Loading test data...")
     test_source, test_translation, _ = lib.data.load_data(data_type=lib.data.DatasetType.TEST, target_language=lib.data.Language.GERMAN)
-    test_src_tok, test_src_vocab = lib.data.tokenize(test_source)
-    test_trans_tok, test_trans_vocab = lib.data.tokenize(test_translation)
+    test_src_tok, _ = lib.data.tokenize(test_source)
+    test_trans_tok, _ = lib.data.tokenize(test_translation)
 
-    print("Computing test english word embeddings")
-    test_english_vectors, _ = lib.embeddings.get_embeddings(
-        english_embedding_model,
-        test_src_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
-
-    print("Computing test german word embeddings")
-    test_german_vectors,  _ = lib.embeddings.get_embeddings(
-        german_embedding_model,
-        test_trans_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
-
-    test_english_avg_sentence_embeddings = lib.embeddings.get_sentence_embeddings(test_english_vectors) 
-    test_german_avg_sentence_embeddings = lib.embeddings.get_sentence_embeddings(test_german_vectors)
-    assert test_english_avg_sentence_embeddings.shape == test_german_avg_sentence_embeddings.shape
-
-    model, history = lib.mlp.fit_model(
-        embeddings,
-        train_scores,
-        batch_size=32,
-        epochs=500,
-        learning_rate=0.001,
-        x_val=val_embeddings,
-        y_val=val_scores,
-        name='mlp_model_best',
-        layers=[10, 20],
-        dropout=0.1,
-        verbose=1,
-    )
-
-    exit()
 
     if True:
         params = {
@@ -128,22 +62,26 @@ if __name__ == "__main__":
 
         print("Hyperparameter search")
 
-        for _ in range(20000):
+        for _ in range(4000):
             sampled_params = get_config(params)
             print("Configuration:")
             print(sampled_params)
 
-            model, history = lib.mlp.fit_model(
-                embeddings,
-                train_scores,
-                batch_size=sampled_params['batch_size'],
-                epochs=sampled_params['epochs'],
-                learning_rate=sampled_params['learning_rate'],
-                x_val=val_embeddings,
+            model, history = lib.mlp.fit_model_embedding_layer(
+                english_x_train=train_source_input,
+                german_x_train=train_translation_input,
+                y_train=train_scores,
+                english_x_val=val_source_input,
+                german_x_val=val_translation_input,
                 y_val=val_scores,
-                name='mlp_model_best',
+                english_w2v=english_embedding_model,
+                german_w2v=german_embedding_model,
+                batch_size=sampled_params["batch_size"],
+                epochs=sampled_params["epochs"],
+                learning_rate=sampled_params["learning_rate"],
+                name="",
                 layers=sampled_params["layers"],
-                dropout=sampled_params["dropout"]
+                dropout=sampled_params["dropout"],
             )
 
             print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
@@ -166,7 +104,7 @@ if __name__ == "__main__":
 
                 if not file_exists:
                     writer.writeheader()
-            
+
                 writer.writerow(h)
     else:
         print("Evaluation: Combine train and val data for re-training")
@@ -198,7 +136,7 @@ if __name__ == "__main__":
 
         print("Concatenating for training")
         embeddings = np.concatenate((english_average_sentence_embeddings, german_average_sentence_embeddings), axis=1)
-        
+
         print("Concatenating for testing")
         test_embeddings = np.concatenate((test_english_avg_sentence_embeddings, test_german_avg_sentence_embeddings), axis=1)
 
@@ -218,4 +156,3 @@ if __name__ == "__main__":
 
         predictions = model.predict(test_embeddings)
         np.savetxt('predictions.txt', predictions, delimiter=',', fmt='%f')
-

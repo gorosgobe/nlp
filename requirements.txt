@@ -4,5 +4,6 @@ numpy
 scipy
 sklearn
 tensorflow
+pytest
 matplotlib
 pandas

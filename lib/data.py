@@ -91,6 +91,7 @@ def pad_to_length(word_embeddings, length, padding):
         for _ in range(num_to_append):
             sentence.append(padding)
 
+
 """
 TODO: remove, should be able to run it from pytest
 """
