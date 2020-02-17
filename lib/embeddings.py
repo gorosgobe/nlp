@@ -1,6 +1,7 @@
 import enum
 from gensim.models import KeyedVectors
 from tensorflow.keras.layers import Embedding
+import tensorflow as tf
 import numpy as np
 import random
 from lib.utils import PAD_TOK
@@ -95,17 +96,24 @@ def get_embedding_input(data_tok, model, max_sent_len):
     num_sentences = len(data_tok)
     pad_idx = model.vocab[PAD_TOK].index
 
-    # initialise with pad token
-    out = np.full((num_sentences, max_sent_len), pad_idx)
+    out = []
 
-    for sentence_idx, sentence in enumerate(data_tok):
-        word_idx = 0
+    for sentence in data_tok:
+        out.append([])
         for word in sentence:
             if word in model.vocab:
-                out[sentence_idx][word_idx] = model.vocab[word].index
-                word_idx += 1
+                out[-1].append(model.vocab[word].index)
 
-    return out
+
+    padded_out = tf.keras.preprocessing.sequence.pad_sequences(
+        out,
+        padding="post",
+        value=pad_idx,
+    )
+
+    return padded_out
+
+
 
 def get_keras_embedding(model, trainable=False):
 
