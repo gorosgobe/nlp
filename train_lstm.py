@@ -6,43 +6,34 @@ import random
 import csv
 import os
 from lib.utils import get_config, MODEL_PATIENCE
+from lib.lstm import batch_generator
 
 HYPERPARAM_SEARCH_FILE = "results_lstm.csv"
 
 if __name__ == "__main__":
 
-    print("Loading training data...")
-    train_source, train_translation, train_scores = lib.data.load_data(data_type=lib.data.DatasetType.TRAIN, target_language=lib.data.Language.GERMAN)
-
-    sources_tok, source_vocab = lib.data.tokenize(train_source)
-    translation_tok, translation_vocab = lib.data.tokenize(train_translation)
-    # import pdb
-    # pdb.set_trace()
     ENGLISH_EMBEDDING_MODEL = "embeddings/en_model_downsampled.bin"
     GERMAN_EMBEDDING_MODEL = "embeddings/de_model_downsampled.bin"
 
     print("Loading english embedding model...")
     english_embedding_model = lib.embeddings.load_embedding(ENGLISH_EMBEDDING_MODEL, lib.embeddings.EmbeddingType.WORD2VEC)
     print("English model loaded")
+    
     print("Loading german embedding model...")
     german_embedding_model = lib.embeddings.load_embedding(GERMAN_EMBEDDING_MODEL, lib.embeddings.EmbeddingType.WORD2VEC)
     print("German model loaded")
 
-    # training vectors
-    print("Training data processing...")
-    print("Computing training english word embeddings...")
-    english_vectors,  _ignored_english_words = lib.embeddings.get_embeddings(
-        english_embedding_model,
-        sources_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
+    print("Loading training data...")
+    train_source, train_translation, train_scores = lib.data.load_data(data_type=lib.data.DatasetType.TRAIN, target_language=lib.data.Language.GERMAN)
 
-    print("Computing training german word embeddings...")
-    german_vectors,  _ignored_german_words = lib.embeddings.get_embeddings(
-        german_embedding_model,
-        translation_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
+    train_sources_tok, _ = lib.data.tokenize(train_source)
+    train_translation_tok, _ = lib.data.tokenize(train_translation)
+
+    train_source_input = lib.embeddings.get_embedding_input(data_tok=train_sources_tok,
+                                                            model=english_embedding_model)
+    train_translation_input = lib.embeddings.get_embedding_input(data_tok=train_translation_tok,
+                                                                 model=german_embedding_model)      
+
 
     # validation vectors
     print("Validation data processing...")
@@ -51,21 +42,21 @@ if __name__ == "__main__":
 
     val_sources_tok, val_source_vocab = lib.data.tokenize(val_source)
     val_translation_tok, val_translation_vocab = lib.data.tokenize(val_translation)
-    val_english_vectors,  ignored_val_english_words = lib.embeddings.get_embeddings(
-        english_embedding_model,
-        val_sources_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
 
-    print("Computing validation german word embeddings...")
-    val_german_vectors,  ignored_val_german_words = lib.embeddings.get_embeddings(
-        german_embedding_model,
-        val_translation_tok,
-        lib.embeddings.EmbeddingType.WORD2VEC
-    )
-    print(f"Ignored words, english {len(ignored_val_english_words)}, german {len(ignored_val_english_words)}")
+    val_source_input = lib.embeddings.get_embedding_input(data_tok=val_sources_tok, 
+                                                          model=english_embedding_model)
+    val_translation_input = lib.embeddings.get_embedding_input(data_tok=val_translation_tok, 
+                                                                model=german_embedding_model)
 
-    if True:
+
+    print("Loading test data...")
+    test_source, test_translation, _ = lib.data.load_data(data_type=lib.data.DatasetType.TEST, target_language=lib.data.Language.GERMAN)
+    test_src_tok, test_src_vocab = lib.data.tokenize(test_source)
+    test_trans_tok, test_trans_vocab = lib.data.tokenize(test_translation)
+
+    # TODO: Get embeddings for test
+
+    if False:
 
         print("Hyperparameter search")
 
@@ -86,7 +77,7 @@ if __name__ == "__main__":
             print(sampled_params)
 
             model, history = lib.lstm.fit_model(
-                english_x=english_vectors,
+                english_x=tr,
                 german_x=german_vectors,
                 y=train_scores,
                 batch_size=sampled_params['batch_size'],
@@ -132,18 +123,24 @@ if __name__ == "__main__":
                 english_x=english_vectors,
                 german_x=german_vectors,
                 y=train_scores,
-                batch_size=256,
-                epochs=17,
-                learning_rate=0.00094,
+                batch_size=512,
+                epochs=14,
+                learning_rate=0.000317,
                 english_x_val=val_english_vectors,
                 german_x_val=val_german_vectors,
                 y_val=val_scores,
                 name='lstm_model_best',
-                layers=[256, 64],
-                dropout=0.38,
-                english_lstm_units=512,
-                german_lstm_units=32,
-                dropout_lstm=0.28,
+                layers=[64, 512, 256, 128],
+                dropout=0.21,
+                english_lstm_units=32,
+                german_lstm_units=256,
+                dropout_lstm=0.23,
                 bidirectional=True,
                 verbose=1
             )
+
+        test_generator = batch_generator(val_english_vectors, val_german_vectors, val_scores, 512)
+        score = model.evaluate_generator(test_generator, steps=2, verbose=1)
+        print(score)
+        # predictions = model.predict_generator(test_generator, steps=1, verbose=1)
+        # np.savetxt('predictions.txt', predictions, delimiter=',', fmt='%f')
