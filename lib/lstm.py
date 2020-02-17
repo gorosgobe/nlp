@@ -1,6 +1,6 @@
 import tensorflow.keras
-from tensorflow.keras.models import Sequential, Model, Masking
-from tensorflow.keras.layers import Dense, BatchNormalization, Activation, concatenate, Input, LSTM, Dropout, Bidirectional
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Dense, BatchNormalization, Activation, concatenate, Input, LSTM, Dropout, Bidirectional, Masking
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from lib.utils import MODELS_SAVE_PATH, EVALUATION_METRICS, BASE_PADDING, MODEL_PATIENCE, PAD_TOK
 from lib.data import pad_to_length
@@ -9,40 +9,40 @@ from lib.embeddings import get_keras_embedding
 import numpy as np
 
 def build_compile_model(
-        english_dimensionality, german_dimensionality, english_w2v, german_w2v, learning_rate,
+        english_w2v, german_w2v, learning_rate,
         layers, dropout, english_lstm_units, german_lstm_units, dropout_lstm, bidirectional=False
     ):
     """
     Builds a LSTM model
     """
-    #import pdb; pdb.set_trace()
-    # define two sets of inputs
-    english_input = Input(shape=(None, english_dimensionality), name='english_input')
-    german_input = Input(shape=(None, german_dimensionality), name='german_input')
+
+    english_input = Input(shape=(None, ), name='english_input')
+    german_input = Input(shape=(None, ), name='german_input')
 
     # Embedding Layer
-    english_input = get_keras_embedding(english_w2v)(english_input)
-    german_input = get_keras_embedding(german_w2v)(german_input)
+    english_embedded = get_keras_embedding(english_w2v)(english_input)
+    german_embedded = get_keras_embedding(german_w2v)(german_input)
 
-    english_input = Masking(mask_value=english_w2v.vocab[PAD_TOK].index)(english_input)
-    german_input = Masking(mask_value=german_w2v.vocab[PAD_TOK].index)(german_input)
+    # Masking Layer
+    english_masked = Masking(mask_value=english_w2v.vocab[PAD_TOK].index)(english_embedded)
+    german_masked = Masking(mask_value=german_w2v.vocab[PAD_TOK].index)(german_embedded)
 
     # english branch
     if bidirectional:
-        x = Bidirectional(LSTM(english_lstm_units))(english_input)
+        en_repr = Bidirectional(LSTM(english_lstm_units))(english_masked)
     else:
-        x = LSTM(english_lstm_units)(english_input)
-    x = Model(inputs=english_input, outputs=x)
+        en_repr = LSTM(english_lstm_units)(english_masked)
+    # x = Model(inputs=english_input, outputs=x)
 
     # german branch
     if bidirectional:
-        y = Bidirectional(LSTM(german_lstm_units))(german_input)
+        de_repr = Bidirectional(LSTM(german_lstm_units))(german_masked)
     else:
-        y = LSTM(german_lstm_units)(german_input)
-    y = Model(inputs=german_input, outputs=y)
+        de_repr = LSTM(german_lstm_units)(german_masked)
+    # y = Model(inputs=german_input, outputs=y)
 
     # combine the output of the two branches
-    combined = concatenate([x.output, y.output])
+    combined = concatenate([en_repr, de_repr])
 
     # apply a FC layer and then a regression prediction on the
     # combined outputs
@@ -54,7 +54,8 @@ def build_compile_model(
 
     # our model will accept the inputs of the two branches and
     # then output a single value
-    model = Model(inputs=[x.input, y.input], outputs=z)
+
+    model = Model(inputs=[english_input, german_input], outputs=z)
     model.compile(
         loss='mean_squared_error',
         optimizer=tensorflow.keras.optimizers.Adam(learning_rate=learning_rate),
@@ -74,9 +75,8 @@ def fit_model(english_x, german_x, english_w2v, german_w2v, y, batch_size, epoch
     # apparently, this version is recommended as just set_random_seed is deprecated
     tensorflow.compat.v1.set_random_seed(seed)
 
-    # TODO: remove 100 hardcoded
     model = build_compile_model(
-        100, 100, english_w2v=english_w2v, german_w2v=german_w2v, learning_rate=learning_rate, layers=layers, dropout=dropout,
+        english_w2v=english_w2v, german_w2v=german_w2v, learning_rate=learning_rate, layers=layers, dropout=dropout,
         dropout_lstm=dropout_lstm, english_lstm_units=english_lstm_units,
         german_lstm_units=german_lstm_units, bidirectional=bidirectional
     )

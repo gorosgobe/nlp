@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     # TODO: Get embeddings for test
 
-    if False:
+    if True:
 
         print("Hyperparameter search")
 
@@ -78,6 +78,8 @@ if __name__ == "__main__":
             model, history = lib.lstm.fit_model(
                 english_x=train_source_input,
                 german_x=train_translation_input,
+                english_w2v=english_embedding_model,
+                german_w2v=german_embedding_model,
                 y=train_scores,
                 batch_size=sampled_params['batch_size'],
                 epochs=sampled_params['epochs'],
@@ -91,7 +93,8 @@ if __name__ == "__main__":
                 english_lstm_units=sampled_params["english_lstm"],
                 german_lstm_units=sampled_params["german_lstm"],
                 dropout_lstm=sampled_params["dropout_lstm"],
-                bidirectional=True
+                bidirectional=True,
+                verbose=1
             )
 
             print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
@@ -119,25 +122,25 @@ if __name__ == "__main__":
     else:
         # TODO: Refactor with correct inputs!
         print("Training model")
-        model, _ = lib.lstm.fit_model(
-                english_x=english_vectors,
-                german_x=german_vectors,
-                y=train_scores,
-                batch_size=512,
-                epochs=14,
-                learning_rate=0.000317,
-                english_x_val=val_english_vectors,
-                german_x_val=val_german_vectors,
-                y_val=val_scores,
-                name='lstm_model_best',
-                layers=[64, 512, 256, 128],
-                dropout=0.21,
-                english_lstm_units=32,
-                german_lstm_units=256,
-                dropout_lstm=0.23,
-                bidirectional=True,
-                verbose=1
-            )
+        # model, _ = lib.lstm.fit_model(
+        #         english_x=english_vectors,
+        #         german_x=german_vectors,
+        #         y=train_scores,
+        #         batch_size=512,
+        #         epochs=14,
+        #         learning_rate=0.000317,
+        #         english_x_val=val_english_vectors,
+        #         german_x_val=val_german_vectors,
+        #         y_val=val_scores,
+        #         name='lstm_model_best',
+        #         layers=[64, 512, 256, 128],
+        #         dropout=0.21,
+        #         english_lstm_units=32,
+        #         german_lstm_units=256,
+        #         dropout_lstm=0.23,
+        #         bidirectional=True,
+        #         verbose=1
+        #     )
 
         # test_generator = batch_generator(val_english_vectors, val_german_vectors, val_scores, 512)
         # score = model.evaluate_generator(test_generator, steps=2, verbose=1)
