@@ -61,13 +61,14 @@ if __name__ == "__main__":
 
         params = {
             "learning_rate": [0.000001 * x for x in range(1000)],
-            "epochs": [250],
+            "epochs": [500],
             "english_lstm": [32, 64, 128, 256, 512],
             "german_lstm": [32, 64, 128, 256, 512],
             "batch_size": [32, 64, 128, 256, 512],
             "dropout": [0.01 * x for x in range(50)],
             "dropout_lstm": [0.01 * x for x in range(50)],
-            "layers": [random.sample([64, 128, 256, 512, 1024], random.randint(1, 4)) for _ in range(1000)]
+            "layers": [random.sample([32, 64, 128, 256, 512], random.randint(1, 4)) for _ in range(1000)],
+            "bidirectional": [True, False]
         }
 
         for _ in range(250):
@@ -93,7 +94,7 @@ if __name__ == "__main__":
                 english_lstm_units=sampled_params["english_lstm"],
                 german_lstm_units=sampled_params["german_lstm"],
                 dropout_lstm=sampled_params["dropout_lstm"],
-                bidirectional=True,
+                bidirectional=sampled_params["bidirectional"],
                 verbose=1
             )
 
