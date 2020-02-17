@@ -92,7 +92,7 @@ def get_embeddings(model, tokenized_sentences, embedding_type, print_max_length=
 
     return res, ignored
 
-def get_embedding_input(data_tok, model, max_sent_len):
+def get_embedding_input(data_tok, model, max_sent_len=None):
     num_sentences = len(data_tok)
     pad_idx = model.vocab[PAD_TOK].index
 
@@ -109,6 +109,7 @@ def get_embedding_input(data_tok, model, max_sent_len):
         out,
         padding="post",
         value=pad_idx,
+        maxlen=max_sent_len,
     )
 
     return padded_out
