@@ -26,9 +26,10 @@ def build_compile_model(learning_rate, layers, dropout):
     return model
 
 def get_average_embedding_model(input_shape,
-                                w2v_model):
+                                w2v_model,
+                                train_embeddings):
     inputs = Input(shape=input_shape)
-    embedded = get_keras_embedding(w2v_model)(inputs)
+    embedded = get_keras_embedding(w2v_model, trainable=train_embeddings)(inputs)
     embedded_sum = Lambda(lambda x: K.sum(x, axis=1), name="sum")(embedded)
 
     pad_token = w2v_model.vocab[PAD_TOK].index
@@ -47,13 +48,18 @@ def build_compile_model_embedding_layer(english_input_shape,
                                         german_w2v,
                                         learning_rate,
                                         layers,
-                                        dropout):
+                                        dropout,
+                                        train_embeddings):
 
     english_input = Input(shape=english_input_shape, name="english_input")
     german_input = Input(shape=german_input_shape, name="german_input")
 
-    english_avg = get_average_embedding_model(english_input_shape, english_w2v)(english_input)
-    german_avg = get_average_embedding_model(german_input_shape, german_w2v)(german_input)
+    english_avg = get_average_embedding_model(english_input_shape,
+                                              english_w2v,
+                                              train_embeddings)(english_input)
+    german_avg = get_average_embedding_model(german_input_shape,
+                                             german_w2v,
+                                             train_embeddings)(german_input)
 
     mlp = Sequential()
     mlp.add(Dense(units=layers[0], activation="relu", input_dim=200))
@@ -79,7 +85,8 @@ def build_compile_model_embedding_layer(english_input_shape,
 
 
 def fit_model_embedding_layer(english_x_train, german_x_train, y_train, english_x_val, german_x_val, y_val,
-                              english_w2v, german_w2v, batch_size, epochs, learning_rate, name, layers, dropout, verbose=0, seed=0):
+                              english_w2v, german_w2v, batch_size, epochs, learning_rate, name, layers,
+                              dropout, train_embeddings=False, verbose=0, seed=0):
 
     np.random.seed(seed)
     # apparently, this version is recommended as just set_random_seed is deprecated
@@ -95,6 +102,7 @@ def fit_model_embedding_layer(english_x_train, german_x_train, y_train, english_
         learning_rate=learning_rate,
         layers=layers,
         dropout=dropout,
+        train_embeddings=train_embeddings,
     )
 
     callbacks = [

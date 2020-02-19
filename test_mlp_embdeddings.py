@@ -31,8 +31,6 @@ def test_average_embeddings(model, data, max_sent_len):
 
     avg = lib.embeddings.get_sentence_embeddings(vectors)
 
-    print(avg.dtype)
-
     embedding_layer_input = lib.embeddings.get_embedding_input(data_tok, model, max_sent_len)
 
     avg_embedding_model = lib.mlp.get_average_embedding_model(input_shape=embedding_layer_input.shape[1:],

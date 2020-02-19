@@ -6,8 +6,11 @@ from lib.utils import get_config, MODEL_PATIENCE, CONSTANT_MAX_LENGTH_ENGLISH, C
 import random
 import os
 import csv
+import ast
 
 HYPERPARAM_SEARCH_FILE = "results_mlp_embeddings.csv"
+
+PEARSON_THRESHOLD = 0.17
 
 if __name__ == "__main__":
 
@@ -51,108 +54,66 @@ if __name__ == "__main__":
     test_trans_tok, _ = lib.data.tokenize(test_translation)
 
 
-    if True:
-        params = {
-            "learning_rate": [0.000001 * x for x in range(1000)],
-            "epochs": [250],
-            "batch_size": [32, 64, 128, 256, 512],
-            "dropout": [0.01 * x for x in range(50)],
-            "layers": [random.sample([64, 128, 256, 512, 1024], random.randint(1, 4)) for _ in range(1000)]
+    print("Hyperparameter search")
+
+    params = []
+    with open("results_mlp_v1_mse.csv") as f:
+        reader = csv.DictReader(f, dialect="unix")
+
+        # skip header
+        next(reader)
+        for row in reader:
+            if row["val_pearsonr"] != "nan" and float(row["val_pearsonr"]) >= PEARSON_THRESHOLD:
+                params.append({
+                    "batch_size": int(row["batch_size"]),
+                    "learning_rate": float(row["learning_rate"]),
+                    "epochs": 500,
+                    "dropout": float(row["dropout"]),
+                    "layers": ast.literal_eval(row["layers"]),
+                })
+
+    print("{} results with pearson score above {}".format(len(params), PEARSON_THRESHOLD))
+
+    for sampled_params in params:
+
+        model, history = lib.mlp.fit_model_embedding_layer(
+            english_x_train=train_source_input,
+            german_x_train=train_translation_input,
+            y_train=train_scores,
+            english_x_val=val_source_input,
+            german_x_val=val_translation_input,
+            y_val=val_scores,
+            english_w2v=english_embedding_model,
+            german_w2v=german_embedding_model,
+            batch_size=sampled_params["batch_size"],
+            epochs=sampled_params["epochs"],
+            learning_rate=sampled_params["learning_rate"],
+            name="",
+            verbose=2,
+            layers=sampled_params["layers"],
+            dropout=sampled_params["dropout"],
+            train_embeddings=True,
+        )
+
+        print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
+        val_mean_squared_error = history.history["val_mean_squared_error"][-MODEL_PATIENCE]
+        val_pearsonr          =  history.history["val_pearsonr"][-MODEL_PATIENCE]
+        val_root_mean_squared_error = history.history["val_root_mean_squared_error"][-MODEL_PATIENCE]
+        val_mae = history.history["val_mae"][-MODEL_PATIENCE]
+        h = {
+            "val_mean_squared_error": float(val_mean_squared_error),
+            "val_pearsonr": float(val_pearsonr),
+            "val_rmse": float(val_root_mean_squared_error),
+            "val_mae": float(val_mae),
+            "best_epoch": len(history.history["val_mean_squared_error"]) - MODEL_PATIENCE,
+            **sampled_params
         }
 
-        print("Hyperparameter search")
+        file_exists = os.path.exists(HYPERPARAM_SEARCH_FILE)
+        with open(HYPERPARAM_SEARCH_FILE, "a") as f:
+            writer = csv.DictWriter(f, fieldnames=sorted(h.keys()), dialect="unix")
 
-        for _ in range(4000):
-            sampled_params = get_config(params)
-            print("Configuration:")
-            print(sampled_params)
+            if not file_exists:
+                writer.writeheader()
 
-            model, history = lib.mlp.fit_model_embedding_layer(
-                english_x_train=train_source_input,
-                german_x_train=train_translation_input,
-                y_train=train_scores,
-                english_x_val=val_source_input,
-                german_x_val=val_translation_input,
-                y_val=val_scores,
-                english_w2v=english_embedding_model,
-                german_w2v=german_embedding_model,
-                batch_size=sampled_params["batch_size"],
-                epochs=sampled_params["epochs"],
-                learning_rate=sampled_params["learning_rate"],
-                name="",
-                layers=sampled_params["layers"],
-                dropout=sampled_params["dropout"],
-            )
-
-            print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
-            val_mean_squared_error = history.history["val_mean_squared_error"][-MODEL_PATIENCE]
-            val_pearsonr          =  history.history["val_pearsonr"][-MODEL_PATIENCE]
-            val_root_mean_squared_error = history.history["val_root_mean_squared_error"][-MODEL_PATIENCE]
-            val_mae = history.history["val_mae"][-MODEL_PATIENCE]
-            h = {
-                "val_mean_squared_error": float(val_mean_squared_error),
-                "val_pearsonr": float(val_pearsonr),
-                "val_rmse": float(val_root_mean_squared_error),
-                "val_mae": float(val_mae),
-                "best_epoch": len(history.history["val_mean_squared_error"]) - MODEL_PATIENCE,
-                **sampled_params
-            }
-
-            file_exists = os.path.exists(HYPERPARAM_SEARCH_FILE)
-            with open(HYPERPARAM_SEARCH_FILE, "a") as f:
-                writer = csv.DictWriter(f, fieldnames=sorted(h.keys()), dialect="unix")
-
-                if not file_exists:
-                    writer.writeheader()
-
-                writer.writerow(h)
-    else:
-        print("Evaluation: Combine train and val data for re-training")
-        train_source = np.concatenate((train_source, val_source), axis=0)
-        train_translation = np.concatenate((train_translation, val_translation), axis=0)
-        train_scores = np.concatenate((train_scores, val_scores), axis=0)
-
-        sources_tok, source_vocab = lib.data.tokenize(train_source)
-        translation_tok, translation_vocab = lib.data.tokenize(train_translation)
-
-        # training vectors
-        print("Computing combined training english word embeddings...")
-        english_vectors,  _ignored_english_words = lib.embeddings.get_embeddings(
-            english_embedding_model,
-            sources_tok,
-            lib.embeddings.EmbeddingType.WORD2VEC
-        )
-
-        print("Computing combined training german word embeddings...")
-        german_vectors,  _ignored_german_words = lib.embeddings.get_embeddings(
-            german_embedding_model,
-            translation_tok,
-            lib.embeddings.EmbeddingType.WORD2VEC
-        )
-
-        english_average_sentence_embeddings = lib.embeddings.get_sentence_embeddings(english_vectors)
-        german_average_sentence_embeddings = lib.embeddings.get_sentence_embeddings(german_vectors)
-        assert english_average_sentence_embeddings.shape == german_average_sentence_embeddings.shape
-
-        print("Concatenating for training")
-        embeddings = np.concatenate((english_average_sentence_embeddings, german_average_sentence_embeddings), axis=1)
-
-        print("Concatenating for testing")
-        test_embeddings = np.concatenate((test_english_avg_sentence_embeddings, test_german_avg_sentence_embeddings), axis=1)
-
-        model, _ = lib.mlp.fit_model(
-            embeddings,
-            train_scores,
-            batch_size=128,
-            epochs=12,
-            learning_rate=0.000484,
-            x_val=None,
-            y_val=None,
-            name='mlp_best_tuned_model',
-            layers=[512, 128, 64, 256],
-            dropout=0.33,
-            verbose=1
-        )
-
-        predictions = model.predict(test_embeddings)
-        np.savetxt('predictions.txt', predictions, delimiter=',', fmt='%f')
+            writer.writerow(h)
