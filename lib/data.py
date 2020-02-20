@@ -62,12 +62,6 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN, augm
     return src, translated, scores
 
 def tokenize(text_array, use_pos=False, data_type=None, lang=None):
-    """
-    >>> sentences, voc = tokenize(np.array(["Hello how are you?", "Thank you I'm fine", "yeah me too."]))
-    >>> sentences 
-    [['hello', 'how', 'are', 'you', '?'], ['thank', 'you', 'i', "'m", 'fine'], ['yeah', 'me', 'too', '.']]
-    """
-
     if use_pos:
 
         cache_path = None
@@ -96,7 +90,10 @@ def tokenize(text_array, use_pos=False, data_type=None, lang=None):
                 lower_cased_tokens.append(tok_lower)
             
             if use_pos:
-                sentences.append(get_pos_tags(lower_cased_tokens, lang))
+                try:
+                    sentences.append(get_pos_tags(lower_cased_tokens, lang))
+                except:
+                    sentences.append([get_pos_tags([tok], lang)[0] for tok in lower_cased_tokens])
             else:
                 sentences.append(lower_cased_tokens)
             pbar.update(1)
@@ -117,11 +114,3 @@ def pad_to_length(word_embeddings, length, padding):
         assert num_to_append >= 0
         for _ in range(num_to_append):
             sentence.append(padding)
-
-
-"""
-TODO: remove, should be able to run it from pytest
-"""
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
