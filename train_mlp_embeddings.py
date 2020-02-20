@@ -92,7 +92,6 @@ if __name__ == "__main__":
             verbose=2,
             layers=sampled_params["layers"],
             dropout=sampled_params["dropout"],
-            train_embeddings=True,
         )
 
         print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
