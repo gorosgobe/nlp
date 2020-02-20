@@ -161,7 +161,8 @@ if __name__ == "__main__":
             german_lstm_units=512,
             dropout_lstm=0.39,
             bidirectional=True,
-            verbose=1
+            verbose=1,
+            attention=True
         )
 
         predictions = model.predict({'english_input': test_source_input, 'german_input': test_translation_input})

@@ -57,12 +57,12 @@ def build_compile_model(
     # y = Model(inputs=german_input, outputs=y)
 
     if attention:
-        attention_probs_en = Dense(english_lstm_units if not bidirectional else 2 * english_lstm_units, activation='softmax')(en_repr)
+        attention_probs_en = LSTM(1, return_sequences=True, activation='softmax')(en_repr)
         attention_mul_en = multiply([en_repr, attention_probs_en])
 
         averaged_en = Lambda(sum_f)(attention_mul_en)
 
-        attention_probs_de = Dense(german_lstm_units if not bidirectional else 2 * german_lstm_units, activation='softmax')(de_repr)
+        attention_probs_de = LSTM(1, return_sequences=True, activation='softmax')(de_repr)
         attention_mul_de = multiply([de_repr, attention_probs_de])
 
         averaged_de = Lambda(sum_f)(attention_mul_de)
@@ -88,6 +88,7 @@ def build_compile_model(
         optimizer=tensorflow.keras.optimizers.Adam(learning_rate=learning_rate),
         metrics=EVALUATION_METRICS
     )
+    print(model.summary())
     return model
 
 def fit_model(english_x, german_x, english_w2v, german_w2v, y, batch_size, epochs, learning_rate,
