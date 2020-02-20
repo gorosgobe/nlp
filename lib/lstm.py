@@ -88,7 +88,6 @@ def build_compile_model(
         optimizer=tensorflow.keras.optimizers.Adam(learning_rate=learning_rate),
         metrics=EVALUATION_METRICS
     )
-    print(model.summary())
     return model
 
 def fit_model(english_x, german_x, english_w2v, german_w2v, y, batch_size, epochs, learning_rate,
