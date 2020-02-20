@@ -13,8 +13,8 @@ if __name__ == "__main__":
     print("Loading training data...")
     train_source, train_translation, train_scores = lib.data.load_data(data_type=lib.data.DatasetType.TRAIN, target_language=lib.data.Language.GERMAN)
 
-    sources_tok, source_vocab = lib.data.tokenize(train_source)
-    translation_tok, translation_vocab = lib.data.tokenize(train_translation)
+    sources_tok = lib.data.tokenize(train_source)
+    translation_tok = lib.data.tokenize(train_translation)
 
     ENGLISH_EMBEDDING_MODEL = "embeddings/en_model_downsampled.bin"
     GERMAN_EMBEDDING_MODEL = "embeddings/de_model_downsampled.bin"
@@ -51,8 +51,8 @@ if __name__ == "__main__":
     print("Computing validation english word embeddings...")
     val_source, val_translation, val_scores = lib.data.load_data(data_type=lib.data.DatasetType.VAL, target_language=lib.data.Language.GERMAN)
 
-    val_sources_tok, val_source_vocab = lib.data.tokenize(val_source)
-    val_translation_tok, val_translation_vocab = lib.data.tokenize(val_translation)
+    val_sources_tok = lib.data.tokenize(val_source)
+    val_translation_tok = lib.data.tokenize(val_translation)
     val_english_vectors,  ignored_val_english_words = lib.embeddings.get_embeddings(
         english_embedding_model,
         val_sources_tok,
@@ -80,8 +80,8 @@ if __name__ == "__main__":
 
     print("Loading test data...")
     test_source, test_translation, _ = lib.data.load_data(data_type=lib.data.DatasetType.TEST, target_language=lib.data.Language.GERMAN)
-    test_src_tok, test_src_vocab = lib.data.tokenize(test_source)
-    test_trans_tok, test_trans_vocab = lib.data.tokenize(test_translation)
+    test_src_tok = lib.data.tokenize(test_source)
+    test_trans_tok = lib.data.tokenize(test_translation)
 
     print("Computing test english word embeddings")
     test_english_vectors, _ = lib.embeddings.get_embeddings(
@@ -174,8 +174,8 @@ if __name__ == "__main__":
         train_translation = np.concatenate((train_translation, val_translation), axis=0)
         train_scores = np.concatenate((train_scores, val_scores), axis=0)
 
-        sources_tok, source_vocab = lib.data.tokenize(train_source)
-        translation_tok, translation_vocab = lib.data.tokenize(train_translation)
+        sources_tok = lib.data.tokenize(train_source)
+        translation_tok = lib.data.tokenize(train_translation)
 
         # training vectors
         print("Computing combined training english word embeddings...")

@@ -26,8 +26,8 @@ if __name__ == "__main__":
     print("Loading training data...")
     train_source, train_translation, train_scores = lib.data.load_data(data_type=lib.data.DatasetType.TRAIN, target_language=lib.data.Language.GERMAN)
 
-    train_sources_tok, _ = lib.data.tokenize(train_source)
-    train_translation_tok, _ = lib.data.tokenize(train_translation)
+    train_sources_tok = lib.data.tokenize(train_source)
+    train_translation_tok = lib.data.tokenize(train_translation)
 
     train_source_input = lib.embeddings.get_embedding_input(data_tok=train_sources_tok,
                                                             model=english_embedding_model)
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     print("Computing validation english word embeddings...")
     val_source, val_translation, val_scores = lib.data.load_data(data_type=lib.data.DatasetType.VAL, target_language=lib.data.Language.GERMAN)
 
-    val_sources_tok, val_source_vocab = lib.data.tokenize(val_source)
-    val_translation_tok, val_translation_vocab = lib.data.tokenize(val_translation)
+    val_sources_tok = lib.data.tokenize(val_source)
+    val_translation_tok = lib.data.tokenize(val_translation)
 
     val_source_input = lib.embeddings.get_embedding_input(data_tok=val_sources_tok, 
                                                           model=english_embedding_model)
@@ -51,8 +51,8 @@ if __name__ == "__main__":
 
     print("Loading test data...")
     test_source, test_translation, _ = lib.data.load_data(data_type=lib.data.DatasetType.TEST, target_language=lib.data.Language.GERMAN)
-    test_src_tok, test_src_vocab = lib.data.tokenize(test_source)
-    test_trans_tok, test_trans_vocab = lib.data.tokenize(test_translation)
+    test_src_tok = lib.data.tokenize(test_source)
+    test_trans_tok = lib.data.tokenize(test_translation)
 
     test_source_input = lib.embeddings.get_embedding_input(data_tok=test_src_tok,
                                                             model=english_embedding_model)
@@ -131,8 +131,8 @@ if __name__ == "__main__":
         train_translation = np.concatenate((train_translation, val_translation), axis=0)
         train_scores = np.concatenate((train_scores, val_scores), axis=0)
 
-        train_sources_tok, _ = lib.data.tokenize(train_source)
-        train_translation_tok, _ = lib.data.tokenize(train_translation)
+        train_sources_tok = lib.data.tokenize(train_source)
+        train_translation_tok = lib.data.tokenize(train_translation)
 
         train_source_input = lib.embeddings.get_embedding_input(data_tok=train_sources_tok,
                                                                 model=english_embedding_model)
