@@ -26,10 +26,9 @@ def build_compile_model(learning_rate, layers, dropout):
     return model
 
 def get_average_embedding_model(input_shape,
-                                w2v_model,
-                                train_embeddings):
+                                w2v_model):
     inputs = Input(shape=input_shape)
-    embedded = get_keras_embedding(w2v_model, trainable=train_embeddings)(inputs)
+    embedded = get_keras_embedding(w2v_model)(inputs)
     embedded_sum = Lambda(lambda x: K.sum(x, axis=1), name="sum")(embedded)
 
     pad_token = w2v_model.vocab[PAD_TOK].index
@@ -39,7 +38,9 @@ def get_average_embedding_model(input_shape,
     avg = Lambda(lambda inputs: inputs[0] / inputs[1], name="avg")([embedded_sum,
                                                                      sent_lens])
 
-    return Model(inputs=inputs, outputs=avg)
+    res = Model(inputs=inputs, outputs=avg)
+    #res.summary()
+    return res
 
 
 def build_compile_model_embedding_layer(english_input_shape,
@@ -48,18 +49,15 @@ def build_compile_model_embedding_layer(english_input_shape,
                                         german_w2v,
                                         learning_rate,
                                         layers,
-                                        dropout,
-                                        train_embeddings):
+                                        dropout):
 
     english_input = Input(shape=english_input_shape, name="english_input")
     german_input = Input(shape=german_input_shape, name="german_input")
 
     english_avg = get_average_embedding_model(english_input_shape,
-                                              english_w2v,
-                                              train_embeddings)(english_input)
+                                              english_w2v)(english_input)
     german_avg = get_average_embedding_model(german_input_shape,
-                                             german_w2v,
-                                             train_embeddings)(german_input)
+                                             german_w2v)(german_input)
 
     mlp = Sequential()
     mlp.add(Dense(units=layers[0], activation="relu", input_dim=200))
@@ -69,8 +67,6 @@ def build_compile_model_embedding_layer(english_input_shape,
 
     mlp.add(Dense(units=1))
 
-    mlp.summary()
-
     mlp_out = mlp(concatenate([english_avg, german_avg]))
 
     model = Model(inputs=[english_input, german_input], outputs=mlp_out)
@@ -79,15 +75,17 @@ def build_compile_model_embedding_layer(english_input_shape,
         optimizer=tensorflow.keras.optimizers.Adam(learning_rate=learning_rate),
         metrics=EVALUATION_METRICS
     )
-    model.summary()
+
+
     return model
 
 
 
 def fit_model_embedding_layer(english_x_train, german_x_train, y_train, english_x_val, german_x_val, y_val,
                               english_w2v, german_w2v, batch_size, epochs, learning_rate, name, layers,
-                              dropout, train_embeddings=False, verbose=0, seed=0):
+                              dropout, verbose=0, seed=0):
 
+    K.clear_session()
     np.random.seed(seed)
     # apparently, this version is recommended as just set_random_seed is deprecated
     tensorflow.compat.v1.set_random_seed(seed)
@@ -102,12 +100,13 @@ def fit_model_embedding_layer(english_x_train, german_x_train, y_train, english_
         learning_rate=learning_rate,
         layers=layers,
         dropout=dropout,
-        train_embeddings=train_embeddings,
     )
 
     callbacks = [
-        EarlyStopping(monitor='val_loss', patience=MODEL_PATIENCE, verbose=1, restore_best_weights=True),
-        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss', verbose=verbose, save_best_only=True, save_weights_only=True)
+        EarlyStopping(monitor='val_loss', patience=MODEL_PATIENCE, verbose=1,
+                      restore_best_weights=True),
+        ModelCheckpoint(f"{MODELS_SAVE_PATH}/{name}.hdf5", monitor='val_loss',
+                        verbose=verbose, save_best_only=True, save_weights_only=True)
     ]
 
     validation_data = None
@@ -118,9 +117,40 @@ def fit_model_embedding_layer(english_x_train, german_x_train, y_train, english_
                                 "german_input": german_x_val},
                                 y_val]
 
-    history = model.fit(x={"english_input": english_x_train, "german_input": german_x_train},
-                        y=y_train, batch_size=batch_size, epochs=epochs, verbose=verbose, validation_data=validation_data, callbacks=callbacks)
-    return model, history
+    model.summary()
+
+    assert model.get_layer("model").get_layer("embedding").trainable == False
+    assert model.get_layer("model_1").get_layer("embedding_1").trainable == False
+
+
+    history_freeze = model.fit(x={"english_input": english_x_train, "german_input": german_x_train},
+                        y=y_train, batch_size=batch_size, epochs=10, verbose=verbose,
+                        validation_data=validation_data, callbacks=callbacks)
+
+    if verbose:
+        print("unfreezing embedding layers")
+
+
+    model.get_layer("model").get_layer("embedding").trainable = True
+    model.get_layer("model_1").get_layer("embedding_1").trainable = True
+
+    assert model.get_layer("model").get_layer("embedding").trainable == True
+    assert model.get_layer("model_1").get_layer("embedding_1").trainable == True
+
+
+    model.compile(
+        loss='mean_squared_error',
+        optimizer=tensorflow.keras.optimizers.Adam(learning_rate=learning_rate),
+        metrics=EVALUATION_METRICS
+    )
+    model.summary()
+
+
+    history_tune = model.fit(x={"english_input": english_x_train, "german_input": german_x_train},
+                        y=y_train, batch_size=batch_size, epochs=epochs, verbose=verbose,
+                        validation_data=validation_data, callbacks=callbacks)
+
+    return model, history_tune
 
 
 def fit_model(x, y, x_val, y_val, batch_size, epochs, learning_rate, name, layers, dropout, seed=2019, verbose=0):

@@ -16,6 +16,12 @@ def pearsonr(x, y):
 __current_file_path = os.path.dirname(os.path.realpath(__file__))
 DATASETS_BASE_PATH = os.path.abspath(os.path.join(__current_file_path, '..', 'datasets/'))
 MODELS_SAVE_PATH = os.path.abspath(os.path.join(__current_file_path, '..', 'saved_models/'))
+SAVED_POS_BASE_PATH = os.path.abspath(os.path.join(__current_file_path, '..', 'pos_tags/'))
+
+POS_TAGGERS_BASE_PATH = '/vol/bitbucket/eb1816/nlp_cw/pos/stanford-postagger-full-2018-10-16/'
+POS_TAGGERS_JAR_PATH = os.path.join(POS_TAGGERS_BASE_PATH, 'stanford-postagger.jar')
+POS_TAGGERS_EN_MODEL_PATH = os.path.join(POS_TAGGERS_BASE_PATH, 'models', 'wsj-0-18-bidirectional-distsim.tagger')
+POS_TAGGERS_DE_MODEL_PATH = os.path.join(POS_TAGGERS_BASE_PATH, 'models', 'german-hgc.tagger')
 
 CONSTANT_MAX_LENGTH_ENGLISH_TRAIN = 39
 CONSTANT_MAX_LENGTH_GERMAN_TRAIN  = 39

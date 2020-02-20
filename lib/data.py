@@ -1,11 +1,14 @@
 import enum
 import numpy as np
 import os.path
+import pickle
+from tqdm import tqdm
 import nltk
 from nltk import WordPunctTokenizer
 nltk.download('punkt')
 from nltk.tokenize import word_tokenize
-from lib.utils import DATASETS_BASE_PATH
+from lib.utils import DATASETS_BASE_PATH, SAVED_POS_BASE_PATH
+from lib.pos import get_pos_tags
 
 class DatasetType(enum.Enum):
     TRAIN = 0
@@ -58,27 +61,51 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN, augm
     
     return src, translated, scores
 
-def tokenize(text_array):
+def tokenize(text_array, use_pos=False, data_type=None, lang=None):
     """
     >>> sentences, voc = tokenize(np.array(["Hello how are you?", "Thank you I'm fine", "yeah me too."]))
     >>> sentences 
     [['hello', 'how', 'are', 'you', '?'], ['thank', 'you', 'i', "'m", 'fine'], ['yeah', 'me', 'too', '.']]
     """
 
+    if use_pos:
+
+        cache_path = None
+        
+        if data_type == DatasetType.TRAIN:
+            cache_path = os.path.join(SAVED_POS_BASE_PATH, f'train-{lang}-pos.pickle')
+        elif data_type == DatasetType.VAL:
+            cache_path = os.path.join(SAVED_POS_BASE_PATH, f'val-{lang}-pos.pickle')
+        elif data_type == DatasetType.TEST:
+            cache_path = os.path.join(SAVED_POS_BASE_PATH, f'test-{lang}-pos.pickle')
+
+        if os.path.isfile(cache_path):
+            with open(cache_path, 'rb') as handle:
+                sentences = pickle.load(handle)
+            return sentences
+
     tokeniser = WordPunctTokenizer()
 
     sentences = []
-    vocabulary = set()
-    for sentence in text_array:
-        tokens = tokeniser.tokenize(sentence)
-        lower_cased_tokens = []
-        for tok in tokens:
-            tok_lower = tok.lower()
-            lower_cased_tokens.append(tok_lower)
-            vocabulary.add(tok_lower)
-        sentences.append(lower_cased_tokens)
+    with tqdm(total=len(text_array)) as pbar:
+        for sentence in text_array:
+            tokens = tokeniser.tokenize(sentence)
+            lower_cased_tokens = []
+            for tok in tokens:
+                tok_lower = tok.lower()
+                lower_cased_tokens.append(tok_lower)
+            
+            if use_pos:
+                sentences.append(get_pos_tags(lower_cased_tokens, lang))
+            else:
+                sentences.append(lower_cased_tokens)
+            pbar.update(1)
 
-    return sentences, vocabulary
+    if use_pos:
+        with open(cache_path, 'wb') as handle:
+            pickle.dump(sentences, handle)
+
+    return sentences
 
 def pad_to_length(word_embeddings, length, padding):
     """
