@@ -92,7 +92,7 @@ def build_compile_model(
 
 def fit_model(english_x, german_x, english_w2v, german_w2v, y, batch_size, epochs, learning_rate,
               layers, dropout, english_lstm_units, german_lstm_units,
-              dropout_lstm, english_x_val, german_x_val, y_val, name, bidirectional=False, seed=2019, verbose=0):
+              dropout_lstm, english_x_val, german_x_val, y_val, name, bidirectional=False, seed=2019, verbose=0, attention=False):
     """
     Builds, compiles and trains model on given dataset
     english_x, german_x: size (7000, max_len_sentence, 100)
@@ -105,7 +105,7 @@ def fit_model(english_x, german_x, english_w2v, german_w2v, y, batch_size, epoch
     model = build_compile_model(
         english_w2v=english_w2v, german_w2v=german_w2v, learning_rate=learning_rate, layers=layers, dropout=dropout,
         dropout_lstm=dropout_lstm, english_lstm_units=english_lstm_units,
-        german_lstm_units=german_lstm_units, bidirectional=bidirectional
+        german_lstm_units=german_lstm_units, bidirectional=bidirectional, attention=attention
     )
     callbacks = [
         EarlyStopping(monitor='val_loss', patience=MODEL_PATIENCE, verbose=verbose, restore_best_weights=True),

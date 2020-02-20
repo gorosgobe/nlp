@@ -72,7 +72,8 @@ if __name__ == "__main__":
             "dropout": [0.01 * x for x in range(50)],
             "dropout_lstm": [0.01 * x for x in range(50)],
             "layers": [random.sample([32, 64, 128, 256, 512], random.randint(1, 4)) for _ in range(1000)],
-            "bidirectional": [True, False]
+            "bidirectional": [True, False],
+            "attention": [True]
         }
 
         for _ in range(250):
@@ -99,7 +100,8 @@ if __name__ == "__main__":
                 german_lstm_units=sampled_params["german_lstm"],
                 dropout_lstm=sampled_params["dropout_lstm"],
                 bidirectional=sampled_params["bidirectional"],
-                verbose=1
+                verbose=1,
+                attention=sampled_params["attention"]
             )
 
             print(history.history["val_mean_squared_error"][-MODEL_PATIENCE])
