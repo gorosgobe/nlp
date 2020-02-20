@@ -133,7 +133,7 @@ def fit_model(english_x_train, german_x_train, y_train, batch_size, epochs,
     _, max_german_len, german_dim = german_x_train.shape
 
     model = build_word_level_conv_net(max_english_len, english_dim,
-                                      max_english_len, german_dim, **network_params)
+                                      max_german_len, german_dim, **network_params)
 
     callbacks = [
         EarlyStopping(monitor='val_loss', patience=30, verbose=1, restore_best_weights=True),
