@@ -39,8 +39,8 @@ def build_compile_model(
     german_embedded = german_embedding_layer(german_input)
 
     # Masking Layer
-    english_masked = Masking(mask_value=english_w2v.vocab[PAD_TOK].index)(english_embedded)
-    german_masked = Masking(mask_value=german_w2v.vocab[PAD_TOK].index)(german_embedded)
+    english_masked = Masking(mask_value=0.0)(english_embedded)
+    german_masked = Masking(mask_value=0.0)(german_embedded)
 
     # english branch
     if bidirectional:
