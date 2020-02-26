@@ -4,6 +4,9 @@ from tensorflow.keras import backend as K
 import random
 
 def pearsonr(x, y):
+    """
+    Computes pearson score given predictions and targets
+    """
     mx = K.mean(x)
     my = K.mean(y)
     xm, ym = x-mx, y-my
@@ -13,6 +16,7 @@ def pearsonr(x, y):
 
     # return K.maximum(K.minimum(r, 1.0), -1.0)
 
+# Paths for models and POS cached results
 __current_file_path = os.path.dirname(os.path.realpath(__file__))
 DATASETS_BASE_PATH = os.path.abspath(os.path.join(__current_file_path, '..', 'datasets/'))
 MODELS_SAVE_PATH = os.path.abspath(os.path.join(__current_file_path, '..', 'saved_models/'))
@@ -23,6 +27,7 @@ POS_TAGGERS_JAR_PATH = os.path.join(POS_TAGGERS_BASE_PATH, 'stanford-postagger.j
 POS_TAGGERS_EN_MODEL_PATH = os.path.join(POS_TAGGERS_BASE_PATH, 'models', 'wsj-0-18-bidirectional-distsim.tagger')
 POS_TAGGERS_DE_MODEL_PATH = os.path.join(POS_TAGGERS_BASE_PATH, 'models', 'german-hgc.tagger')
 
+# Max lengths of sentences in datasets after removal of unknown words
 CONSTANT_MAX_LENGTH_ENGLISH_TRAIN = 39
 CONSTANT_MAX_LENGTH_GERMAN_TRAIN  = 39
 
