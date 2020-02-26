@@ -31,4 +31,4 @@ Particularly:
  * ```lib/pos```: Handles POS tagging
 
 # Predictions
-Predictions for our best models are provided in the predictions_\<test_pearson_score\>.txt files.
+Predictions for our test submissions are provided in the ```predictions_<test_pearson_score>.txt``` files in the ```predictions``` folder.
