@@ -1,3 +1,5 @@
+"""Handles loading and tokenising of datasets"""
+
 import enum
 import numpy as np
 import os.path
@@ -11,16 +13,29 @@ from lib.utils import DATASETS_BASE_PATH, SAVED_POS_BASE_PATH
 from lib.pos import get_pos_tags
 
 class DatasetType(enum.Enum):
+    """
+    Represents the type of dataset
+    """
+
     TRAIN = 0
     VAL = 1
     TEST = 2
 
 class Language(enum.Enum):
+    """
+    Represents the dataset language
+    """
+
     GERMAN = 0
     ENGLISH = 1
     CHINESE = 2
 
 def load_text(path):
+    """
+    Given a path to csv file, loads the data and 
+    returns it as a numpy array
+    """
+
     with open(path) as f:
         read_text = f.read().splitlines()
     
@@ -28,6 +43,11 @@ def load_text(path):
     
 
 def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN, augmented=False):
+    """
+    Given the dataset type, target language and whether or not to use augmented data, 
+    loads and returns numpy array representations of the source text, translation text and scores.
+    """
+
     if target_language == Language.ENGLISH:
         raise ValueError("Target language cannot be english")
     
@@ -62,7 +82,17 @@ def load_data(data_type=DatasetType.TRAIN, target_language=Language.GERMAN, augm
     return src, translated, scores
 
 def tokenize(text_array, use_pos=False, data_type=None, lang=None):
+    """
+    Given an array of sentences, returns:
+        If use_pos:
+            An array of tokenised sentences (where each tokenised sentence is an array of tokens) 
+        else:
+            An array of tokenised sentences (where each tokenised sentence is an array of tuples of (token, POS tag))
+    NOTE: If use_pos is False, the rest of the kwargs are ignored
+    """
+
     if use_pos:
+        # Since POS tags take long to generate, use cached version if exists
 
         cache_path = None
         
@@ -90,15 +120,18 @@ def tokenize(text_array, use_pos=False, data_type=None, lang=None):
                 lower_cased_tokens.append(tok_lower)
             
             if use_pos:
+                # Store tokenised sentence i.e. arrays of (token, POS_TAG) tuples
                 try:
                     sentences.append(get_pos_tags(lower_cased_tokens, lang))
                 except:
                     sentences.append([get_pos_tags([tok], lang)[0] for tok in lower_cased_tokens])
             else:
+                # Store tokenised sentence
                 sentences.append(lower_cased_tokens)
             pbar.update(1)
 
     if use_pos:
+        # Store POS tags to allow faster loading on next invocation
         with open(cache_path, 'wb') as handle:
             pickle.dump(sentences, handle)
 
@@ -106,9 +139,10 @@ def tokenize(text_array, use_pos=False, data_type=None, lang=None):
 
 def pad_to_length(word_embeddings, length, padding):
     """
-    word_embeddings: of size for example (num_sentences, variable_num_words_per_sentence, dimensionality)
-    Returns: word_embeddings but with size (num_sentences, max_num_words_per_sentence, dimensionality), padded with zeros of dimension (dimensionality,)
+    Given some data (word_embeddings or other), of shape (x, variable, dimensionality) 
+    returns the data padded in the 2nd dimension to size length i.e. (x, length, dimensionality) 
     """
+
     for sentence in word_embeddings:
         num_to_append = length - len(sentence)
         assert num_to_append >= 0
