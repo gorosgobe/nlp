@@ -14,6 +14,10 @@ class EmbeddingType(enum.Enum):
     WORD2VEC = 0
 
 def get_pos_indices(pos_tags, idx_map):
+    """
+    Return the one hot representation of POS tags given a mapping
+    of their indices.
+    """
     result = []
     max_sent_len = max(len(l) for l in pos_tags)
 
