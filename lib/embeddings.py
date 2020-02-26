@@ -8,9 +8,30 @@ import tensorflow as tf
 import numpy as np
 import random
 from lib.utils import PAD_TOK
+from lib.data import pad_to_length
 
 class EmbeddingType(enum.Enum):
     WORD2VEC = 0
+
+def get_pos_indices(pos_tags, idx_map):
+    result = []
+    max_sent_len = max(len(l) for l in pos_tags)
+
+    for pos_tag_s in pos_tags:
+        tag_encodings = []
+        for tag in pos_tag_s:
+            tag_idx = idx_map[tag]
+            encoding = [0] * len(idx_map)
+            encoding[tag_idx] = 1
+            tag_encodings.append(encoding)
+
+        result.append(tag_encodings)
+
+    pad_value = [0] * len(idx_map)
+    pad_to_length(result, max_sent_len, pad_value)
+
+    return np.array(result)
+
 
 def load_embedding(path, embedding_type):
     """
@@ -112,23 +133,51 @@ def get_embeddings(model, tokenized_sentences, embedding_type, print_max_length=
 
     return res, ignored
 
-def get_embedding_input(data_tok, model, max_sent_len=None):
+def get_embedding_input(data_tok, model, max_sent_len=None, pos_idx_map=None):
     """
     Given the tokenised data data_tok and the word embedding model,
     return the input to the Keras Embedding layer. That is,
     replace each word with its index in the embedding model and
     padd sentences using the pad token index.
+
+    if pos_idx_max, the part of speech index mapping, is specificed
+    the second return value is not None and will correspond to the POS
+    indices for each word (except the special pad token PAD_TOK)
     """
     num_sentences = len(data_tok)
     pad_idx = model.vocab[PAD_TOK].index
 
-    out = []
+    use_pos = isinstance(data_tok[0][0], tuple)
+    if use_pos:
+        out_tags = []
+    else:
+        out_tags = None
 
+    out = []
     for sentence in data_tok:
+        if use_pos:
+            # if using POS, extract pos from input
+            tokenised_sent, pos_tags = zip(*sentence)
+        else:
+            tokenised_sent = sentence
+
         out.append([])
-        for word in sentence:
+
+        if use_pos:
+            out_tags.append([])
+
+        for idx, word in enumerate(tokenised_sent):
             if word in model.vocab:
                 out[-1].append(model.vocab[word].index)
+                if use_pos:
+                    out_tags[-1].append(pos_tags[idx])
+
+    # build map for pos tags
+    if use_pos and pos_idx_map is not None:
+        for out_tag_s in out_tags:
+            for tag in out_tag_s:
+                if tag not in pos_idx_map:
+                    pos_idx_map[tag] = len(pos_idx_map)
 
     # pad to the max outputlength with the index of the pad token PAD_TOK
     padded_out = tf.keras.preprocessing.sequence.pad_sequences(
@@ -138,7 +187,7 @@ def get_embedding_input(data_tok, model, max_sent_len=None):
         maxlen=max_sent_len,
     )
 
-    return padded_out
+    return padded_out, out_tags
 
 
 

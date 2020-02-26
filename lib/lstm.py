@@ -1,3 +1,6 @@
+"""
+Functions to build and train LSTM based models.
+"""
 import tensorflow.keras
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, BatchNormalization, Activation, concatenate, Input, LSTM, Dropout, Bidirectional, Masking, Lambda, multiply
@@ -10,12 +13,18 @@ from tensorflow.keras import backend as K
 import numpy as np
 
 def average_f(inputs, mask):
+    """
+    Lambda layer function that averages its input taking a mask into account
+    """
     number_mask = K.cast(mask, "float32")
     sums = K.sum(inputs * K.expand_dims(number_mask, -1), axis=1)
     lengths = K.sum(number_mask, axis=1, keepdims=True)
     return sums / lengths
 
 def sum_f(inputs, mask):
+    """
+    Lambda layer function that sums its input taking a mask into account
+    """
     number_mask = K.cast(mask, "float32")
     sums = K.sum(inputs * K.expand_dims(number_mask, -1), axis=1)
     return sums
@@ -23,14 +32,18 @@ def sum_f(inputs, mask):
 
 def build_compile_model(
         english_w2v, german_w2v, learning_rate,
-        layers, dropout, english_lstm_units, german_lstm_units, dropout_lstm, bidirectional=False, attention=False
+        layers, dropout, english_lstm_units, german_lstm_units, dropout_lstm, bidirectional=False, attention=False, 
+        pos_tags_encoded_en=None, pos_tags_encoded_de=None
     ):
     """
-    Builds a LSTM model
+    Builds an LSTM model
     """
 
     english_input = Input(shape=(None, ), name='english_input')
     german_input = Input(shape=(None, ), name='german_input')
+
+    english_encoding = Input(shape=(None, 41), name='english_encoding')
+    german_encoding = Input(shape=(None, 51), name='german_encoding')
 
     # Embedding Layer
     english_embedding_layer = get_keras_embedding(english_w2v)
@@ -38,30 +51,34 @@ def build_compile_model(
     german_embedding_layer = get_keras_embedding(german_w2v)
     german_embedded = german_embedding_layer(german_input)
 
+    english_combined_input = concatenate([english_embedded, english_encoding], axis=2)
+    german_combined_input = concatenate([german_embedded, german_encoding], axis=2)
+
     # Masking Layer
-    english_masked = Masking(mask_value=english_w2v.vocab[PAD_TOK].index)(english_embedded)
-    german_masked = Masking(mask_value=german_w2v.vocab[PAD_TOK].index)(german_embedded)
+    english_masked = Masking(mask_value=0.0, input_shape=(39, 141))(english_combined_input)
+    german_masked = Masking(mask_value=0.0, input_shape=(39, 151))(german_combined_input)
 
     # english branch
     if bidirectional:
         en_repr = Bidirectional(LSTM(english_lstm_units, return_sequences=attention))(english_masked)
     else:
-        en_repr = LSTM(english_lstm_units, return_sequences=attention)(english_masked)
-    # x = Model(inputs=english_input, outputs=x)
+        en_repr = LSTM(english_lstm_units, input_shape=(39, 141), return_sequences=attention)(english_masked)
 
     # german branch
     if bidirectional:
         de_repr = Bidirectional(LSTM(german_lstm_units, return_sequences=attention))(german_masked)
     else:
-        de_repr = LSTM(german_lstm_units, return_sequences=attention)(german_masked)
-    # y = Model(inputs=german_input, outputs=y)
+        de_repr = LSTM(german_lstm_units, input_shape=(39, 151), return_sequences=attention)(german_masked)
 
     if attention:
+        # compute attention probabilities
         attention_probs_en = LSTM(1, return_sequences=True, activation='softmax')(en_repr)
+        # multiply with attention
         attention_mul_en = multiply([en_repr, attention_probs_en])
-
+        # sum to obtain weighted average
         averaged_en = Lambda(sum_f)(attention_mul_en)
 
+        # same as above, but with German
         attention_probs_de = LSTM(1, return_sequences=True, activation='softmax')(de_repr)
         attention_mul_de = multiply([de_repr, attention_probs_de])
 
@@ -82,7 +99,7 @@ def build_compile_model(
     # our model will accept the inputs of the two branches and
     # then output a single value
 
-    model = Model(inputs=[english_input, german_input], outputs=z)
+    model = Model(inputs=[english_input, german_input, english_encoding, german_encoding], outputs=z)
     model.compile(
         loss='mean_squared_error',
         optimizer=tensorflow.keras.optimizers.Adam(learning_rate=learning_rate),
@@ -115,13 +132,30 @@ def fit_model(english_x, german_x, english_w2v, german_w2v, y, batch_size, epoch
     # train_generator = batch_generator(english_x, german_x, y, batch_size)
     validation_data = None
     if english_x_val is not None and german_x_val is not None and y_val is not None:
-        validation_data = { 'english_input': english_x_val, 'german_input': german_x_val }, {'output': y_val}
+        validation_data = { 
+            'english_input': english_x_val['input'], 
+            'german_input': german_x_val['input'], 
+            'english_encoding': english_x_val['encoding'], 
+            'german_encoding': german_x_val['encoding']
+        }, {'output': y_val}
 
-    history = model.fit({'english_input': english_x, 'german_input': german_x}, y, batch_size=batch_size, epochs=epochs, verbose=verbose, validation_data=validation_data, callbacks=callbacks)
+    history = model.fit(
+        {
+            'english_input': english_x['input'], 
+            'german_input': german_x['input'], 
+            'english_encoding': english_x['encoding'], 
+            'german_encoding': german_x['encoding']
+        }, 
+        y, batch_size=batch_size, epochs=epochs, verbose=verbose, validation_data=validation_data, 
+        callbacks=callbacks
+    )
 
     return model, history
 
 def eval_model(x_test_english, x_test_german, y_test, model):
+    """
+    Evaluates supplied model on test data
+    """
     score = model.evaluate([x_test_english, x_test_german], y_test)
     print(score)
     return score
