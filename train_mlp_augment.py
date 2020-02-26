@@ -1,3 +1,5 @@
+"""MLP full end-to-end pipeline on AUGMENTED dataset for either running hyperparam search or training model on best tuned hyperparameters"""
+
 import lib.data
 import lib.embeddings
 import numpy as np
@@ -6,6 +8,7 @@ from lib.utils import get_config, MODEL_PATIENCE
 import random
 import os
 import csv
+import sys
 
 HYPERPARAM_SEARCH_FILE = "results_mlp.csv"
 
@@ -16,7 +19,6 @@ if __name__ == "__main__":
     sources_tok, source_vocab = lib.data.tokenize(train_source)
     translation_tok, translation_vocab = lib.data.tokenize(train_translation)
 
-    #TODO: downsample these to augmented vocab
     ENGLISH_EMBEDDING_MODEL = "/vol/bitbucket/eb1816/nlp_cw/embeddings/english/model.bin"
     GERMAN_EMBEDDING_MODEL = "/vol/bitbucket/eb1816/nlp_cw/embeddings/german/model.bin"
 
@@ -102,7 +104,9 @@ if __name__ == "__main__":
     test_german_avg_sentence_embeddings = lib.embeddings.get_sentence_embeddings(test_german_vectors)
     assert test_english_avg_sentence_embeddings.shape == test_german_avg_sentence_embeddings.shape
 
-    if True:
+    if 'train' in sys.argv:
+        # Hyperparameter search
+
         params = {
             "learning_rate": [0.000001 * x for x in range(1000)],
             "epochs": [250],
@@ -153,7 +157,10 @@ if __name__ == "__main__":
                     writer.writeheader()
             
                 writer.writerow(h)
-    else:
+
+    elif 'test' in sys.argv:
+        # Generate test predictions on best performing model
+
         print("Evaluation: Combine train and val data for re-training")
         train_source = np.concatenate((train_source, val_source), axis=0)
         train_translation = np.concatenate((train_translation, val_translation), axis=0)

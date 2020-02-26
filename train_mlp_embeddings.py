@@ -1,3 +1,5 @@
+"""Loops through best MLP configurations to see if trainable embeddings yields substantial performance increase"""
+
 import lib.data
 import lib.embeddings
 import numpy as np
@@ -53,6 +55,8 @@ if __name__ == "__main__":
     test_src_tok, _ = lib.data.tokenize(test_source)
     test_trans_tok, _ = lib.data.tokenize(test_translation)
 
+
+    # Find parameters which yielded pearson score higher than threshold
 
     print("Hyperparameter search")
 

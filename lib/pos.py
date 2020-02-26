@@ -1,3 +1,5 @@
+""" Handles POS tagging"""
+
 from nltk.tag import StanfordPOSTagger
 from lib.utils import POS_TAGGERS_JAR_PATH, POS_TAGGERS_EN_MODEL_PATH, POS_TAGGERS_DE_MODEL_PATH
 
@@ -5,6 +7,10 @@ POS_TAGGER_EN = StanfordPOSTagger(POS_TAGGERS_EN_MODEL_PATH, POS_TAGGERS_JAR_PAT
 POS_TAGGER_DE = StanfordPOSTagger(POS_TAGGERS_DE_MODEL_PATH, POS_TAGGERS_JAR_PATH)
 
 def get_pos_tags(tokenised_sentence, lang):
+    """
+    Given a tokenised sentence, returns sentence as array of tuples of (token, POS Tag)
+    """
+
     if lang == 'en':
         pos_tagger = POS_TAGGER_EN
     elif lang == 'de':
