@@ -1,3 +1,7 @@
+"""
+CNN model module.
+"""
+
 import tensorflow.keras
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv1D, GlobalMaxPooling1D, concatenate, Dense, Dropout, \
@@ -19,8 +23,10 @@ def _get_single_conv(max_len, dim, *, stride,
     :param dim: Dimension of each word
     :param stride: stride of convolution
     :param filter_sizes: A list of sizes of each filter
-    :param filter_counts: A list of the number of filter of each size. Should be same length as filter_sizes.
-    :param pooling_type: String specifying the pooling type used. "max" for max pooling, "avg", for average pooling.
+    :param filter_counts: A list of the number of filter of each size.
+                          Should be same length as filter_sizes.
+    :param pooling_type: String specifying the pooling type used.
+                         "max" for max pooling, "avg", for average pooling.
     :returns: The CNN model
     """
 
@@ -87,6 +93,8 @@ def build_word_level_conv_net(max_english_len,
     english_input = Input(shape=(max_english_len, english_dim), name="english_input")
     german_input = Input(shape=(max_german_len, german_dim), name="german_input")
 
+
+    # apply CNN to both inputs to get sentence representation
     english_conv = _get_single_conv(max_english_len, english_dim,
                                     stride=stride,
                                     filter_sizes=filter_sizes,
@@ -99,9 +107,11 @@ def build_word_level_conv_net(max_english_len,
                                    filter_counts=filter_counts,
                                    pooling_type=pooling_type)(german_input)
 
-
+    # concetenate sentence representations
     x = concatenate([english_conv, german_conv])
 
+
+    # MLP
     x = Dropout(dropout_rate)(x)
 
     for layer_size in fc_layers:

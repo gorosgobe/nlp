@@ -1,3 +1,6 @@
+"""
+Functions to build and train LSTM based models.
+"""
 import tensorflow.keras
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, BatchNormalization, Activation, concatenate, Input, LSTM, Dropout, Bidirectional, Masking, Lambda, multiply
@@ -10,12 +13,18 @@ from tensorflow.keras import backend as K
 import numpy as np
 
 def average_f(inputs, mask):
+    """
+    Lambda layer function that averages its input taking a mask into account
+    """
     number_mask = K.cast(mask, "float32")
     sums = K.sum(inputs * K.expand_dims(number_mask, -1), axis=1)
     lengths = K.sum(number_mask, axis=1, keepdims=True)
     return sums / lengths
 
 def sum_f(inputs, mask):
+    """
+    Lambda layer function that sums its input taking a mask into account
+    """
     number_mask = K.cast(mask, "float32")
     sums = K.sum(inputs * K.expand_dims(number_mask, -1), axis=1)
     return sums
@@ -27,7 +36,7 @@ def build_compile_model(
         pos_tags_encoded_en=None, pos_tags_encoded_de=None
     ):
     """
-    Builds a LSTM model
+    Builds an LSTM model
     """
 
     english_input = Input(shape=(None, ), name='english_input')
@@ -62,11 +71,14 @@ def build_compile_model(
         de_repr = LSTM(german_lstm_units, input_shape=(39, 151), return_sequences=attention)(german_masked)
 
     if attention:
+        # compute attention probabilities
         attention_probs_en = LSTM(1, return_sequences=True, activation='softmax')(en_repr)
+        # multiply with attention
         attention_mul_en = multiply([en_repr, attention_probs_en])
-
+        # sum to obtain weighted average
         averaged_en = Lambda(sum_f)(attention_mul_en)
 
+        # same as above, but with German
         attention_probs_de = LSTM(1, return_sequences=True, activation='softmax')(de_repr)
         attention_mul_de = multiply([de_repr, attention_probs_de])
 
@@ -141,6 +153,9 @@ def fit_model(english_x, german_x, english_w2v, german_w2v, y, batch_size, epoch
     return model, history
 
 def eval_model(x_test_english, x_test_german, y_test, model):
+    """
+    Evaluates supplied model on test data
+    """
     score = model.evaluate([x_test_english, x_test_german], y_test)
     print(score)
     return score
