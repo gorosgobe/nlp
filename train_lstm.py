@@ -1,3 +1,5 @@
+"""LSTM full end-to-end pipeline for either running hyperparam search or training model on best tuned hyperparameters"""
+
 import lib.data
 import lib.embeddings
 import numpy as np
@@ -39,6 +41,7 @@ if __name__ == "__main__":
                                                                                          model=german_embedding_model,
                                                                                          pos_idx_map=pos_idx_map_de)      
 
+    print("One-hot encode training POS...")
     one_hot_pos_train_en = lib.embeddings.get_pos_indices(train_source_pos, pos_idx_map_en)
     one_hot_pos_train_de = lib.embeddings.get_pos_indices(train_translation_pos, pos_idx_map_de)
 
@@ -58,6 +61,7 @@ if __name__ == "__main__":
                                                                                      model=german_embedding_model,
                                                                                      pos_idx_map=pos_idx_map_de)
 
+    print("One-hot encode validation POS...")
     one_hot_pos_val_en = lib.embeddings.get_pos_indices(val_source_pos, pos_idx_map_en)
     one_hot_pos_val_de = lib.embeddings.get_pos_indices(val_translation_pos, pos_idx_map_de)   
 
@@ -73,12 +77,13 @@ if __name__ == "__main__":
                                                                                        model=german_embedding_model,
                                                                                        pos_idx_map=pos_idx_map_de) 
 
+    print("One-hot encode test POS...")
     one_hot_pos_test_en = lib.embeddings.get_pos_indices(test_source_pos, pos_idx_map_en)
     one_hot_pos_test_de = lib.embeddings.get_pos_indices(test_translation_pos, pos_idx_map_de)    
 
 
     if 'train' in sys.argv:
-
+        # Hyperparameter search
         print("Hyperparameter search")
 
         params = {
@@ -97,8 +102,6 @@ if __name__ == "__main__":
         for _ in range(250):
             sampled_params = get_config(params)
             print("Configuration:")
-            print(one_hot_pos_train_en.shape)
-            print(train_source_input.shape)
             model, history = lib.lstm.fit_model(
                 english_x={'input': train_source_input, 'encoding': one_hot_pos_train_en},
                 german_x={'input': train_translation_input, 'encoding': one_hot_pos_train_de},
@@ -146,38 +149,46 @@ if __name__ == "__main__":
                 writer.writerow(h)
 
     elif 'test' in sys.argv:
-        # print("Evaluation: Combine train and val data for re-training")
-        # train_source = np.concatenate((train_source, val_source), axis=0)
-        # train_translation = np.concatenate((train_translation, val_translation), axis=0)
-        # train_scores = np.concatenate((train_scores, val_scores), axis=0)
+        # Generate test predictions on best performing model
 
-        # train_sources_tok = lib.data.tokenize(train_source)
-        # train_translation_tok = lib.data.tokenize(train_translation)
+        print("Evaluation: Combine train and val data for re-training")
 
-        # train_source_input = lib.embeddings.get_embedding_input(data_tok=train_sources_tok,
-        #                                                         model=english_embedding_model)
-        # train_translation_input = lib.embeddings.get_embedding_input(data_tok=train_translation_tok,
-        #                                                             model=german_embedding_model)  
+        train_scores = np.concatenate((train_scores, val_scores), axis=0)
+        
+        train_val_sources_tok = np.concatenate((train_sources_tok, val_sources_tok), axis=0)
+
+        train_val_translation_tok = np.concatenate((train_translation_tok, val_translation_tok), axis=0)
+
+
+        train_val_source_input, train_val_source_pos = lib.embeddings.get_embedding_input(data_tok=train_val_sources_tok,
+                                                                                            model=english_embedding_model,
+                                                                                            pos_idx_map=pos_idx_map_en)
+        train_val_translation_input, train_val_translation_pos = lib.embeddings.get_embedding_input(data_tok=train_val_translation_tok,
+                                                                                                        model=german_embedding_model,
+                                                                                                        pos_idx_map=pos_idx_map_de)    
+
+        one_hot_pos_train_val_en = lib.embeddings.get_pos_indices(train_val_source_pos, pos_idx_map_en)
+        one_hot_pos_train_val_de = lib.embeddings.get_pos_indices(train_val_translation_pos, pos_idx_map_de)
 
         print("Training model")
         model, _ = lib.lstm.fit_model(
-           english_x={'input': train_source_input, 'encoding': one_hot_pos_train_en},
-            german_x={'input': train_translation_input, 'encoding': one_hot_pos_train_de},
+           english_x={'input': train_val_source_input, 'encoding': one_hot_pos_train_val_en},
+            german_x={'input': train_val_translation_input, 'encoding': one_hot_pos_train_val_de},
             english_w2v=english_embedding_model,
             german_w2v=german_embedding_model,
             y=train_scores,
             batch_size=128,
-            epochs= 1000,
-            learning_rate=0.000015,
+            epochs= 9,
+            learning_rate=0.000346,
             english_x_val={'input': val_source_input, 'encoding': one_hot_pos_val_en},
             german_x_val={'input': val_translation_input, 'encoding': one_hot_pos_val_de},
             y_val=val_scores,
             name='lstm_model_best',
-            layers=[512, 128, 64, 32],
-            dropout=0.22,
-            english_lstm_units=128,
+            layers=[256, 128],
+            dropout=0.11,
+            english_lstm_units=256,
             german_lstm_units=512,
-            dropout_lstm=0.39,
+            dropout_lstm=0.36,
             bidirectional=True,
             verbose=1,
             attention=True

@@ -1,3 +1,5 @@
+"""CNN full end-to-end pipeline for either running hyperparam search or training model on best tuned hyperparameters"""
+
 import lib.data
 import lib.embeddings
 import numpy as np
@@ -85,7 +87,8 @@ if __name__ == "__main__":
 
 
     if 'train' in sys.argv:
-        # TODO: handle test lengths
+        # Hyperparameter search
+
         lib.data.pad_to_length(english_vectors, lib.utils.CONSTANT_MAX_LENGTH_ENGLISH_TRAIN, [0.0] * 100)
         lib.data.pad_to_length(german_vectors, lib.utils.CONSTANT_MAX_LENGTH_GERMAN_TRAIN, [0.0] * 100)
         lib.data.pad_to_length(val_english_vectors, lib.utils.CONSTANT_MAX_LENGTH_ENGLISH_TRAIN, [0.0] * 100)
@@ -154,6 +157,8 @@ if __name__ == "__main__":
                 
                 writer.writerow(h)
     elif 'test' in sys.argv:
+        # Generate test predictions on best performing model
+
         print("Evaluation: Combine train and val data for re-training")
         train_source = np.concatenate((train_source, val_source), axis=0)
         train_translation = np.concatenate((train_translation, val_translation), axis=0)

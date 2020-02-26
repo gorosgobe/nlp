@@ -1,3 +1,5 @@
+"""MLP full end-to-end pipeline for either running hyperparam search or training model on best tuned hyperparameters"""
+
 import lib.data
 import lib.embeddings
 import numpy as np
@@ -6,6 +8,7 @@ from lib.utils import get_config, MODEL_PATIENCE
 import random
 import os
 import csv
+import sys
 
 HYPERPARAM_SEARCH_FILE = "results_mlp.csv"
 
@@ -101,23 +104,10 @@ if __name__ == "__main__":
     test_german_avg_sentence_embeddings = lib.embeddings.get_sentence_embeddings(test_german_vectors)
     assert test_english_avg_sentence_embeddings.shape == test_german_avg_sentence_embeddings.shape
 
-    model, history = lib.mlp.fit_model(
-        embeddings,
-        train_scores,
-        batch_size=32,
-        epochs=500,
-        learning_rate=0.001,
-        x_val=val_embeddings,
-        y_val=val_scores,
-        name='mlp_model_best',
-        layers=[10, 20],
-        dropout=0.1,
-        verbose=1,
-    )
 
-    exit()
+    if 'train' in sys.argv:
+        # Hyperparameter search
 
-    if True:
         params = {
             "learning_rate": [0.000001 * x for x in range(1000)],
             "epochs": [250],
@@ -168,7 +158,10 @@ if __name__ == "__main__":
                     writer.writeheader()
             
                 writer.writerow(h)
-    else:
+
+    elif 'test' in sys.argv:
+        # Generate test predictions on best performing model
+
         print("Evaluation: Combine train and val data for re-training")
         train_source = np.concatenate((train_source, val_source), axis=0)
         train_translation = np.concatenate((train_translation, val_translation), axis=0)
